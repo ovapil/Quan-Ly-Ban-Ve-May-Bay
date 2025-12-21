@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Auth</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+</head>
+
+<body class="auth-mode">
+  <div id="toast">Thông báo</div>
+
+  <!-- WELCOME -->
+  <div id="welcome-screen" class="glass-card container-width">
+    <div class="brand-inner">
+      <img src="assets/images/logo.png" alt="Logo" />
+      <span>UITicket</span>
+    </div>
+
+    <div class="content-title">
+      <h1>Buy&Fly.</h1>
+      <h2 style="margin-bottom: 30px;">Catch your sky!</h2>
+    </div>
+
+    <button class="primary-btn" style="width: 180px; margin: 0 auto;" onclick="AuthUI.showLogin()">Đăng nhập</button>
+
+    <p class="footer-text">
+      Chưa có tài khoản UITicket?
+      <a onclick="AuthUI.showSignup()">Đăng ký ở đây <img src="assets/images/arrow-small.png" class="external-icon-img" /></a>
+    </p>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="container-width">
+      <div class="login-header">
+        <img src="assets/images/logo-white.png" alt="Logo White" />
+        <h2>Đăng nhập vào UITicket</h2>
+      </div>
+
+      <div class="glass-card login-card">
+        <div class="input-group">
+          <label>Tên tài khoản</label>
+          <div class="input-wrapper">
+            <input type="text" id="loginUser" placeholder="Username" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <div class="input-wrapper">
+            <input type="password" placeholder="Password" id="passwordInput" />
+            <i class="fa-solid fa-eye-slash eye-icon" id="togglePasswordBtn"></i>
+          </div>
+        </div>
+
+        <div class="remember-me">
+          <input type="checkbox" id="remember" />
+          <label for="remember" style="color: #3f51b5; margin-bottom: 0;">Ghi nhớ đăng nhập</label>
+        </div>
+
+        <button class="primary-btn" onclick="Auth.handleLogin()">Đăng nhập</button>
+        <a href="#" class="forgot-pass" onclick="AuthUI.showForgot(); return false;">Quên mật khẩu?</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNUP -->
+  <div id="signup-screen">
+    <div class="container-width">
+      <div class="login-header">
+        <img src="assets/images/logo-white.png" alt="Logo White" />
+        <h2 class="one-line">Đăng ký tài khoản UITicket</h2>
+      </div>
+
+      <div class="glass-card login-card">
+        <div class="input-group">
+          <label>Tên tài khoản</label>
+          <div class="input-wrapper">
+            <input type="text" id="signupUser" placeholder="Username" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Email</label>
+          <div class="input-wrapper">
+            <input type="email" id="signupEmail" placeholder="example@gmail.com" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <div class="input-wrapper">
+            <input type="password" id="signupPass" placeholder="Password" />
+            <i class="fa-solid fa-eye-slash eye-icon" id="toggleSignupBtn"></i>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Nhập lại mật khẩu</label>
+          <div class="input-wrapper">
+            <input type="password" id="signupPassConfirm" placeholder="Confirm Password" />
+          </div>
+        </div>
+
+        <button class="primary-btn" onclick="Auth.handleSignup()">Đăng ký</button>
+        <p class="footer-text">Đã có tài khoản? <a onclick="AuthUI.showLogin()">Quay lại đăng nhập</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORGOT PASSWORD -->
+  <div id="forgot-screen">
+    <div class="container-width">
+      <div class="login-header">
+        <img src="assets/images/logo-white.png" alt="Logo White" />
+        <h2>Quên mật khẩu</h2>
+      </div>
+
+      <div class="glass-card login-card">
+        <div class="input-group">
+          <label>Tên tài khoản</label>
+          <div class="input-wrapper">
+            <input type="text" id="resetUser" placeholder="Username" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Email đã đăng ký</label>
+          <div class="input-wrapper">
+            <input type="email" id="resetEmail" placeholder="example@gmail.com" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Nội dung yêu cầu</label>
+          <div class="input-wrapper">
+            <textarea id="resetMessage" placeholder="Ví dụ: Mình quên mật khẩu, nhờ admin reset giúp."></textarea>
+          </div>
+        </div>
+
+        <button class="primary-btn" onclick="Auth.sendResetRequest()">Gửi yêu cầu reset</button>
+
+        <p class="footer-text">
+          <a onclick="AuthUI.showLogin()">Quay lại đăng nhập</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

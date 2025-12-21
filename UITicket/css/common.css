@@ -1,0 +1,43 @@
+:root{
+  --bg: #F7F9FF;
+  --text: #0B1B6F;
+  --muted: #6B7280;
+  --primary: #2E4AA8;
+  --chip-admin: #F59E0B;
+
+  --radius-lg: 22px;
+  --gap: 20px;
+  --pad: 24px;
+  --shadow: 0 10px 30px rgba(17,24,39,0.08);
+
+  --tile-lookup: #F4A15F;
+  --tile-customers: #2B2F6E;
+  --tile-booking: #2E2F4E;
+  --tile-schedule: #76E0E5;
+  --tile-report: #1B1E68;
+  --tile-sell: #4FA7F2;
+  --tile-system: #CDEFF1;
+  --tile-user: #EEF0FF;
+}
+
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+#toast{
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4caf50;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  display: none;
+  z-index: 2000;
+  font-weight: 800;
+}

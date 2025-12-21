@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Dashboard</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body class="app-mode">
+  <div id="toast">Thông báo</div>
+
+  <header class="app-header">
+    <div class="bar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"><i class="fa-solid fa-earth-asia"></i></div>
+        <div class="name">
+          <div class="title">UITicket</div>
+          <div class="slogan">Buy&Fly. Catch your sky!</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab active" onclick="Dashboard.tabClick('home')">Trang chủ</button>
+        <button class="tab" onclick="Dashboard.tabClick('account')">Tài khoản</button>
+        <button class="tab" onclick="Dashboard.tabClick('settings')">Cài đặt</button>
+      </nav>
+
+      <div class="actions">
+        <button class="icon-btn" onclick="Dashboard.openNotifications()" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge" id="notifBadge">1</span>
+        </button>
+        <button class="icon-btn" onclick="Dashboard.tabClick('settings')" aria-label="Settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+        <button class="icon-btn" onclick="UI.toast('Menu (demo)', 'warn')" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="grid">
+      <!-- User -->
+      <div class="tile user" tabindex="0" role="button" onclick="Dashboard.tileClick('profile')">
+        <div class="user-wrap">
+          <div class="avatar">
+            <img id="avatarImg" src="avatar.png" alt="Avatar" />
+            <i class="fa-solid fa-user" id="avatarFallback"></i>
+          </div>
+
+          <div class="user-meta">
+            <div class="user-name" id="homeName">Nguyễn Văn A</div>
+            <div class="chip" id="roleChip"><i class="fa-solid fa-shield-halved"></i> <span id="homeRole">Admin</span></div>
+
+            <div class="mini-actions">
+              <button class="mini-btn" onclick="event.stopPropagation(); Dashboard.tileClick('profile')">Hồ sơ</button>
+              <button class="mini-btn danger" onclick="event.stopPropagation(); Dashboard.logout()">Đăng xuất</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tra cứu -->
+      <div class="tile lookup" tabindex="0" role="button" onclick="Dashboard.tileClick('lookup')">
+        <div class="row">
+          <div class="tile-icon"><i class="fa-solid fa-magnifying-glass-location"></i></div>
+          <div class="col" style="text-align:right;">
+            <div class="kicker">Tra cứu</div>
+            <div class="big">CHUYẾN BAY</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customers -->
+      <div class="tile customers" tabindex="0" role="button" onclick="Dashboard.tileClick('customers')">
+        <div class="row">
+          <div class="tile-icon dark"><i class="fa-solid fa-id-card-clip"></i></div>
+          <div class="col">
+            <div class="big mid">Khách hàng</div>
+            <div class="big mid" style="opacity:0.9;">Hành khách</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking span 2 rows -->
+      <div class="tile booking" tabindex="0" role="button" onclick="Dashboard.tileClick('booking')">
+        <div class="col">
+          <div class="kicker">Quản lý</div>
+          <div class="big">ĐẶT VÉ</div>
+        </div>
+        <div class="seat-illus" aria-hidden="true"><i class="fa-solid fa-chair"></i></div>
+      </div>
+
+      <!-- Schedule -->
+      <div class="tile schedule" tabindex="0" role="button" onclick="Dashboard.tileClick('schedule')">
+        <div class="row">
+          <div class="col">
+            <div class="kicker">Nhận lịch</div>
+            <div class="big mid">CHUYẾN BAY</div>
+          </div>
+          <div class="tile-icon"><i class="fa-solid fa-calendar-days"></i></div>
+        </div>
+      </div>
+
+      <!-- Report -->
+      <div class="tile report" tabindex="0" role="button" onclick="Dashboard.tileClick('report')">
+        <div class="row">
+          <div class="tile-icon dark"><i class="fa-solid fa-chart-pie"></i></div>
+          <div class="col">
+            <div class="big small">Báo cáo /</div>
+            <div class="big small" style="opacity:0.92;">Thống kê</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sell -->
+      <div class="tile sell" tabindex="0" role="button" onclick="Dashboard.tileClick('sell')">
+        <div class="row">
+          <div class="tile-icon"><i class="fa-solid fa-plane-departure"></i></div>
+          <div class="col" style="text-align:right;">
+            <div class="big">BÁN VÉ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System -->
+      <div class="tile system" id="systemTile" tabindex="0" role="button" onclick="Dashboard.tileClick('system')">
+        <div class="row">
+          <div class="tile-icon light"><i class="fa-solid fa-clipboard-check"></i></div>
+          <div class="col">
+            <div class="big small">Hệ thống / Cài đặt</div>
+            <div class="bullets">
+              <div><span class="dot">•</span>Quy định</div>
+              <div><span class="dot">•</span>Tài khoản &amp; phân quyền</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

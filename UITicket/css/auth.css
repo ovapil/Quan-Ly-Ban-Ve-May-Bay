@@ -1,0 +1,194 @@
+body.auth-mode{
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* ✅ cách 1: ảnh nằm trong assets/images */
+  background-image: url("../assets/images/background.png");
+  background-size: cover;
+  background-position: center;
+
+  overflow: hidden;
+}
+
+.container-width{
+  width: 90%;
+  max-width: 450px;
+}
+
+.glass-card{
+  background: #fff;
+  border-radius: 40px;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.05), 0 25px 50px rgba(0,0,0,0.15);
+}
+
+#welcome-screen{
+  padding: 40px 20px 50px;
+  text-align: center;
+}
+
+.brand-inner{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+.brand-inner img{ height: 50px; }
+.brand-inner span{
+  color: #3f51b5;
+  font-weight: 800;
+  font-size: 26px;
+}
+
+.login-header{
+  text-align: center;
+  color: #fff;
+  margin-bottom: 35px;
+  width: 100%;
+}
+.login-header img{
+  height: 100px;
+  margin-bottom: 15px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+.login-header h2{
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* ✅ ép 1 dòng + tự co để vừa */
+.login-header h2.one-line{
+  white-space: nowrap;
+  font-size: clamp(16px, 5.5vw, 34px);
+  line-height: 1.2;
+}
+
+.login-card{
+  padding: 35px 40px;
+  text-align: left;
+  width: 100%;
+}
+
+.input-group{
+  margin-bottom: 20px;
+}
+.input-group label{
+  display: block;
+  color: #3f51b5;
+  font-weight: 800;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.input-wrapper{
+  position: relative;
+}
+
+.input-wrapper input,
+.input-wrapper textarea{
+  width: 100%;
+  padding: 13px 15px;
+  padding-right: 45px;
+  border: 1px solid #eee;
+  background: #fcfcfc;
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.input-wrapper textarea{
+  padding-right: 15px;
+  resize: none;
+  min-height: 110px;
+  line-height: 1.4;
+}
+
+.eye-icon{
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #7a869a;
+  font-size: 18px;
+}
+
+.remember-me{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #3f51b5;
+  font-weight: 700;
+  margin-bottom: 25px;
+}
+
+.primary-btn{
+  background: #3f51b5;
+  color: #fff;
+  border: none;
+  padding: 14px 0;
+  border-radius: 30px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  display: block;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(63,81,181,0.3);
+}
+
+.forgot-pass{
+  text-align: center;
+  display: block;
+  color: #7a869a;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.content-title h1,
+.content-title h2{
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.footer-text{
+  margin-top: 30px;
+  font-size: 14px;
+  color: #444;
+  text-align: center;
+}
+
+.footer-text a{
+  color: #3f51b5;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.external-icon-img{
+  height: 14px;
+  vertical-align: middle;
+  margin-left: 5px;
+}
+
+/* Screens */
+#login-screen,
+#signup-screen,
+#forgot-screen{
+  display: none;
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 480px){
+  .login-card{ padding: 28px 24px; }
+  .login-header h2{ font-size: 30px; }
+}
