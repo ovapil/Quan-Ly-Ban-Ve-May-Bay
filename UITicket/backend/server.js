@@ -11,7 +11,7 @@ const { Pool } = require('pg');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // ============================================
 // DATABASE CONNECTION
@@ -931,6 +931,108 @@ app.patch("/api/admin/staff/:id/active", verifyToken, requireAdmin, async (req, 
   } catch (e) {
     console.error("PATCH /admin/staff/:id/active error:", e);
     res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
+// ============================================
+// USER: CHANGE PASSWORD
+// ============================================
+app.post("/api/user/change-password", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  let { currentPassword, newPassword } = req.body || {};
+
+  try {
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới' });
+    }
+
+    currentPassword = String(currentPassword).trim();
+    newPassword = String(newPassword).trim();
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+    }
+
+    // Lấy mật khẩu hiện tại từ DB
+    const userResult = await pool.query(
+      'SELECT password_hash FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+    }
+
+    // Kiểm tra mật khẩu hiện tại
+    const isValid = await bcrypt.compare(currentPassword, userResult.rows[0].password_hash);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Mật khẩu hiện tại không chính xác' });
+    }
+
+    // Hash mật khẩu mới
+    const newPasswordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    // Cập nhật password
+    await pool.query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      [newPasswordHash, userId]
+    );
+
+    // Revoke tất cả sessions cũ
+    await pool.query(
+      'UPDATE sessions SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL',
+      [userId]
+    );
+
+    res.json({ message: '✅ Thay đổi mật khẩu thành công. Vui lòng đăng nhập lại.' });
+
+  } catch (error) {
+    console.error('POST /api/user/change-password error:', error);
+    res.status(500).json({ error: 'Lỗi server', details: error.message });
+  }
+});
+
+// ============================================
+// USER: CHANGE AVATAR
+// ============================================
+app.post("/api/user/change-avatar", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  let { avatar_url } = req.body || {};
+
+  try {
+    if (!avatar_url) {
+      return res.status(400).json({ error: 'Vui lòng nhập URL ảnh' });
+    }
+
+    avatar_url = String(avatar_url).trim();
+
+    // Kiểm tra URL hợp lệ (hỗ trợ http://, https://, hoặc data URL)
+    const isValidUrl = avatar_url.startsWith('http://') || 
+                       avatar_url.startsWith('https://') || 
+                       avatar_url.startsWith('data:image/');
+    
+    if (!isValidUrl) {
+      return res.status(400).json({ error: 'URL ảnh phải là http://, https://, hoặc ảnh được tải lên' });
+    }
+
+    // Cập nhật avatar_url
+    const result = await pool.query(
+      'UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING id, avatar_url',
+      [avatar_url, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+    }
+
+    res.json({ 
+      message: '✅ Cập nhật ảnh đại diện thành công',
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('POST /api/user/change-avatar error:', error);
+    res.status(500).json({ error: 'Lỗi server', details: error.message });
   }
 });
 

@@ -154,6 +154,10 @@ const Dashboard = {
   },
 
   tabClick(tab) {
+    if (tab === 'account') {
+      window.location.href = 'account.html';
+      return;
+    }
     UI.toast(`Tab: ${tab} (demo)`, "warn");
   },
 
