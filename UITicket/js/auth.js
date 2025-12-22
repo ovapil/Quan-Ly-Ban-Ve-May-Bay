@@ -1,3 +1,9 @@
+// ============================================
+// AUTH.JS - KẾT NỐI API BACKEND (FIXED VERSION)
+// ============================================
+
+const API_BASE_URL = 'http://localhost:3000/api';
+
 const AuthUI = {
   hideAll() {
     ["welcome-screen", "login-screen", "signup-screen", "forgot-screen"].forEach(id => {
@@ -61,59 +67,109 @@ const Auth = {
     window.onpopstate = () => AuthUI.showWelcome();
   },
 
-  handleSignup() {
+  // ✅ Đăng ký qua API
+  async handleSignup() {
     const user = document.getElementById("signupUser").value.trim();
     const email = document.getElementById("signupEmail").value.trim();
+    const pass = document.getElementById("signupPass").value;
+    const passConfirm = document.getElementById("signupPassConfirm").value;
 
+    // Validate
     if (!user) return alert("Vui lòng nhập tên tài khoản!");
+    if (user.length < 3) return alert("Tên tài khoản phải có ít nhất 3 ký tự!");
     if (!email) return alert("Vui lòng nhập email!");
+    if (!/\S+@\S+\.\S+/.test(email)) return alert("Email không hợp lệ!");
+    if (!pass) return alert("Vui lòng nhập mật khẩu!");
+    if (pass.length < 6) return alert("Mật khẩu phải có ít nhất 6 ký tự!");
+    if (pass !== passConfirm) return alert("Mật khẩu xác nhận không khớp!");
 
-    const users = Storage.getJSON("uiticket_users", []);
-    if (users.some(u => u.username.toLowerCase() === user.toLowerCase())) {
-      return alert("Tên tài khoản đã tồn tại!");
-    }
+    try {
+      UI.showLoading();
 
-    const role = (user.toLowerCase() === "admin") ? "Admin" : "User";
-    users.unshift({ username: user, email, role, createdAt: new Date().toISOString() });
-    Storage.setJSON("uiticket_users", users);
-
-    UI.toast("🎉 Đăng ký thành công!", "success");
-
-    setTimeout(() => {
-      AuthUI.showLogin();
-      document.getElementById("loginUser").value = user;
-      ["signupUser","signupEmail","signupPass","signupPassConfirm"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = "";
+      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, email, password: pass })
       });
-    }, 650);
+
+      const data = await response.json();
+      
+      UI.hideLoading();
+
+      if (!response.ok) {
+        UI.toast(`❌ ${data.error || "Đăng ký thất bại"}`, "warn");
+        return;
+      }
+
+      UI.toast("🎉 Đăng ký thành công!", "success");
+
+      setTimeout(() => {
+        AuthUI.showLogin();
+        document.getElementById("loginUser").value = user;
+        ["signupUser", "signupEmail", "signupPass", "signupPassConfirm"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
+      }, 650);
+
+    } catch (error) {
+      UI.hideLoading();
+      console.error('Signup error:', error);
+      UI.toast("❌ Lỗi kết nối server. Vui lòng kiểm tra backend đã chạy chưa!", "warn");
+    }
   },
 
-  handleLogin() {
+  // ✅ Đăng nhập qua API
+  async handleLogin() {
     const username = document.getElementById("loginUser").value.trim();
+    const password = document.getElementById("passwordInput").value;
+
     if (!username) return alert("Vui lòng nhập tên tài khoản!");
-
-    const users = Storage.getJSON("uiticket_users", []);
-    const found = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-
-    const session = {
-      username: found?.username || username,
-      role: found?.role || (username.toLowerCase() === "admin" ? "Admin" : "User"),
-      email: found?.email || ""
-    };
+    if (!password) return alert("Vui lòng nhập mật khẩu!");
 
     const remember = document.getElementById("remember").checked;
-    Storage.setSession(session, remember);
 
-    UI.toast("✅ Đăng nhập thành công!", "success");
+    try {
+      UI.showLoading();
 
-    // ✅ Chuyển sang trang dashboard
-    setTimeout(() => {
-      window.location.href = "dashboard.html";
-    }, 450);
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, remember })
+      });
+
+      const data = await response.json();
+      
+      UI.hideLoading();
+
+      if (!response.ok) {
+        UI.toast(`❌ ${data.error || "Đăng nhập thất bại"}`, "warn");
+        return;
+      }
+
+      // ✅ Lưu token và user info
+      localStorage.setItem('uiticket_token', data.token);
+      localStorage.setItem('uiticket_user', JSON.stringify(data.user));
+
+      UI.toast("✅ Đăng nhập thành công!", "success");
+
+      // ✅ Clear form
+      document.getElementById("passwordInput").value = "";
+      document.getElementById("remember").checked = false;
+
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 450);
+
+    } catch (error) {
+      UI.hideLoading();
+      console.error('Login error:', error);
+      UI.toast("❌ Lỗi kết nối server. Vui lòng kiểm tra backend đã chạy chưa!", "warn");
+    }
   },
 
-  sendResetRequest() {
+  // ✅ Gửi yêu cầu reset qua API
+  async sendResetRequest() {
     const user = document.getElementById("resetUser").value.trim();
     const email = document.getElementById("resetEmail").value.trim();
     const msg = document.getElementById("resetMessage").value.trim();
@@ -121,34 +177,96 @@ const Auth = {
     if (!user) return alert("Vui lòng nhập Tên tài khoản!");
     if (!email) return alert("Vui lòng nhập Email đã đăng ký!");
 
-    const users = Storage.getJSON("uiticket_users", []);
-    const matched = users.find(u =>
-      u.username.toLowerCase() === user.toLowerCase() &&
-      u.email.toLowerCase() === email.toLowerCase()
-    );
+    UI.showLoading();
 
-    if (!matched) {
-      UI.toast("❌ Username/Email không khớp!", "warn");
-      return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, email, message: msg })
+      });
+
+      const data = await response.json();
+
+      UI.hideLoading();
+
+      if (!response.ok) {
+        UI.toast(`❌ ${data.error || "Gửi yêu cầu thất bại"}`, "warn");
+        return;
+      }
+
+      UI.toast("✅ Đã gửi yêu cầu reset tới Admin!", "success");
+
+      // ✅ Clear form
+      ["resetUser", "resetEmail", "resetMessage"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+      });
+
+      setTimeout(() => AuthUI.showLogin(), 650);
+
+    } catch (error) {
+      UI.hideLoading();
+      console.error('Reset request error:', error);
+      UI.toast("❌ Lỗi kết nối server!", "warn");
     }
+  }
+};
 
-    const requests = Storage.getJSON("uiticket_reset_requests", []);
-    requests.unshift({
-      user, email,
-      message: msg || "Yêu cầu reset mật khẩu.",
-      createdAt: new Date().toISOString(),
-      userAgent: navigator.userAgent
-    });
-    Storage.setJSON("uiticket_reset_requests", requests);
+// ============================================
+// UI UTILITIES
+// ============================================
+const UI = {
+  // Toast notification
+  toast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+    
+    toast.textContent = message;
+    toast.setAttribute('data-type', type);
+    toast.style.display = "block";
+    
+    setTimeout(() => { 
+      toast.style.display = "none"; 
+    }, 2500);
+  },
 
-    UI.toast("✅ Đã gửi yêu cầu reset tới Admin!", "success");
+  // Loading overlay
+  showLoading() {
+    let overlay = document.getElementById("loadingOverlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "loadingOverlay";
+      overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        backdrop-filter: blur(2px);
+      `;
+      
+      const spinner = document.createElement("div");
+      spinner.style.cssText = `
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      `;
+      
+      overlay.appendChild(spinner);
+      document.body.appendChild(overlay);
+    }
+    overlay.style.display = "flex";
+  },
 
-    ["resetUser","resetEmail","resetMessage"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = "";
-    });
-
-    setTimeout(() => AuthUI.showLogin(), 650);
+  hideLoading() {
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) overlay.style.display = "none";
   }
 };
 

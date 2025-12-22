@@ -10,15 +10,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
-
   <link rel="stylesheet" href="css/common.css" />
   <link rel="stylesheet" href="css/auth.css" />
 </head>
 
 <body class="auth-mode">
+  <!-- ✅ THÊM: Toast notification -->
   <div id="toast">Thông báo</div>
 
-  <!-- WELCOME -->
+  <!-- WELCOME SCREEN -->
   <div id="welcome-screen" class="glass-card container-width">
     <div class="brand-inner">
       <img src="assets/images/logo.png" alt="Logo" />
@@ -30,16 +30,21 @@
       <h2 style="margin-bottom: 30px;">Catch your sky!</h2>
     </div>
 
-    <button class="primary-btn" style="width: 180px; margin: 0 auto;" onclick="AuthUI.showLogin()">Đăng nhập</button>
+    <button class="primary-btn" style="width: 180px; margin: 0 auto;" onclick="AuthUI.showLogin()">
+      Đăng nhập
+    </button>
 
     <p class="footer-text">
       Chưa có tài khoản UITicket?
-      <a onclick="AuthUI.showSignup()">Đăng ký ở đây <img src="assets/images/arrow-small.png" class="external-icon-img" /></a>
+      <a onclick="AuthUI.showSignup(); return false;" style="cursor: pointer;">
+        Đăng ký ở đây
+        <img src="assets/images/arrow-small.png" class="external-icon-img" alt="Arrow" />
+      </a>
     </p>
   </div>
 
-  <!-- LOGIN -->
-  <div id="login-screen">
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" style="display: none;">
     <div class="container-width">
       <div class="login-header">
         <img src="assets/images/logo-white.png" alt="Logo White" />
@@ -50,31 +55,53 @@
         <div class="input-group">
           <label>Tên tài khoản</label>
           <div class="input-wrapper">
-            <input type="text" id="loginUser" placeholder="Username" />
+            <input 
+              type="text" 
+              id="loginUser" 
+              placeholder="Username"
+              autocomplete="username"
+            />
           </div>
         </div>
 
         <div class="input-group">
           <label>Mật khẩu</label>
           <div class="input-wrapper">
-            <input type="password" placeholder="Password" id="passwordInput" />
-            <i class="fa-solid fa-eye-slash eye-icon" id="togglePasswordBtn"></i>
+            <input 
+              type="password" 
+              id="passwordInput" 
+              placeholder="Password"
+              autocomplete="current-password"
+            />
+            <i class="fa-solid fa-eye-slash eye-icon" id="togglePasswordBtn" style="cursor: pointer;"></i>
           </div>
         </div>
 
         <div class="remember-me">
           <input type="checkbox" id="remember" />
-          <label for="remember" style="color: #3f51b5; margin-bottom: 0;">Ghi nhớ đăng nhập</label>
+          <label for="remember" style="color: #3f51b5; margin-bottom: 0; cursor: pointer;">
+            Ghi nhớ đăng nhập
+          </label>
         </div>
 
-        <button class="primary-btn" onclick="Auth.handleLogin()">Đăng nhập</button>
-        <a href="#" class="forgot-pass" onclick="AuthUI.showForgot(); return false;">Quên mật khẩu?</a>
+        <button class="primary-btn" id="loginBtn" onclick="Auth.handleLogin()">
+          Đăng nhập
+        </button>
+
+        <a 
+          href="#" 
+          class="forgot-pass" 
+          onclick="AuthUI.showForgot(); return false;"
+          style="cursor: pointer;"
+        >
+          Quên mật khẩu?
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- SIGNUP -->
-  <div id="signup-screen">
+  <!-- SIGNUP SCREEN -->
+  <div id="signup-screen" style="display: none;">
     <div class="container-width">
       <div class="login-header">
         <img src="assets/images/logo-white.png" alt="Logo White" />
@@ -85,40 +112,68 @@
         <div class="input-group">
           <label>Tên tài khoản</label>
           <div class="input-wrapper">
-            <input type="text" id="signupUser" placeholder="Username" />
+            <input 
+              type="text" 
+              id="signupUser" 
+              placeholder="Username (3+ ký tự)"
+              autocomplete="username"
+            />
           </div>
         </div>
 
         <div class="input-group">
           <label>Email</label>
           <div class="input-wrapper">
-            <input type="email" id="signupEmail" placeholder="example@gmail.com" />
+            <input 
+              type="email" 
+              id="signupEmail" 
+              placeholder="example@gmail.com"
+              autocomplete="email"
+            />
           </div>
         </div>
 
         <div class="input-group">
           <label>Mật khẩu</label>
           <div class="input-wrapper">
-            <input type="password" id="signupPass" placeholder="Password" />
-            <i class="fa-solid fa-eye-slash eye-icon" id="toggleSignupBtn"></i>
+            <input 
+              type="password" 
+              id="signupPass" 
+              placeholder="Password (6+ ký tự)"
+              autocomplete="new-password"
+            />
+            <i class="fa-solid fa-eye-slash eye-icon" id="toggleSignupBtn" style="cursor: pointer;"></i>
           </div>
         </div>
 
         <div class="input-group">
           <label>Nhập lại mật khẩu</label>
           <div class="input-wrapper">
-            <input type="password" id="signupPassConfirm" placeholder="Confirm Password" />
+            <input 
+              type="password" 
+              id="signupPassConfirm" 
+              placeholder="Confirm Password"
+              autocomplete="new-password"
+            />
           </div>
         </div>
 
-        <button class="primary-btn" onclick="Auth.handleSignup()">Đăng ký</button>
-        <p class="footer-text">Đã có tài khoản? <a onclick="AuthUI.showLogin()">Quay lại đăng nhập</a></p>
+        <button class="primary-btn" id="signupBtn" onclick="Auth.handleSignup()">
+          Đăng ký
+        </button>
+
+        <p class="footer-text">
+          Đã có tài khoản? 
+          <a onclick="AuthUI.showLogin(); return false;" style="cursor: pointer;">
+            Quay lại đăng nhập
+          </a>
+        </p>
       </div>
     </div>
   </div>
 
-  <!-- FORGOT PASSWORD -->
-  <div id="forgot-screen">
+  <!-- FORGOT PASSWORD SCREEN -->
+  <div id="forgot-screen" style="display: none;">
     <div class="container-width">
       <div class="login-header">
         <img src="assets/images/logo-white.png" alt="Logo White" />
@@ -129,34 +184,52 @@
         <div class="input-group">
           <label>Tên tài khoản</label>
           <div class="input-wrapper">
-            <input type="text" id="resetUser" placeholder="Username" />
+            <input 
+              type="text" 
+              id="resetUser" 
+              placeholder="Username"
+              autocomplete="username"
+            />
           </div>
         </div>
 
         <div class="input-group">
           <label>Email đã đăng ký</label>
           <div class="input-wrapper">
-            <input type="email" id="resetEmail" placeholder="example@gmail.com" />
+            <input 
+              type="email" 
+              id="resetEmail" 
+              placeholder="example@gmail.com"
+              autocomplete="email"
+            />
           </div>
         </div>
 
         <div class="input-group">
           <label>Nội dung yêu cầu</label>
           <div class="input-wrapper">
-            <textarea id="resetMessage" placeholder="Ví dụ: Mình quên mật khẩu, nhờ admin reset giúp."></textarea>
+            <textarea 
+              id="resetMessage" 
+              placeholder="Ví dụ: Mình quên mật khẩu, nhờ admin reset giúp."
+              style="resize: vertical; min-height: 100px;"
+            ></textarea>
           </div>
         </div>
 
-        <button class="primary-btn" onclick="Auth.sendResetRequest()">Gửi yêu cầu reset</button>
+        <button class="primary-btn" id="resetBtn" onclick="Auth.sendResetRequest()">
+          Gửi yêu cầu reset
+        </button>
 
         <p class="footer-text">
-          <a onclick="AuthUI.showLogin()">Quay lại đăng nhập</a>
+          <a onclick="AuthUI.showLogin(); return false;" style="cursor: pointer;">
+            ← Quay lại đăng nhập
+          </a>
         </p>
       </div>
     </div>
   </div>
 
-  <script src="js/storage.js"></script>
+  <!-- ✅ THÊM: Script js/auth.js -->
   <script src="js/auth.js"></script>
 </body>
 </html>
