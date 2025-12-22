@@ -158,6 +158,10 @@ const Dashboard = {
       window.location.href = 'account.html';
       return;
     }
+    if (tab === 'settings') {
+      window.location.href = 'settings.html';
+      return;
+    }
     UI.toast(`Tab: ${tab} (demo)`, "warn");
   },
 

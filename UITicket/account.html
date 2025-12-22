@@ -322,8 +322,14 @@
 
       <!-- CLOSE BUTTON -->
       <div class="actions">
-        <button class="icon-btn" onclick="window.location='dashboard.html'" title="Quay lại">
-          <i class="fa-solid fa-arrow-left"></i>
+        <button class="icon-btn dropdown-btn" aria-label="Menu" onclick="UI.toggleMenu()">
+          <i class="fa-solid fa-bars"></i>
+          <div class="dropdown-menu hidden" id="dropdownMenu">
+            <a href="#" onclick="window.location='dashboard.html'; return false;">🏠 Trang chủ</a>
+            <a href="#" onclick="window.location='settings.html'; return false;">⚙️ Cài đặt</a>
+            <hr style="margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;">
+            <a href="#" onclick="showLogoutConfirm(); return false;" style="color: #ef4444;">🚪 Đăng xuất</a>
+          </div>
         </button>
       </div>
     </div>
@@ -458,8 +464,9 @@
     }
 
     function settingsNav(page) {
-      console.log(`Navigate to: ${page}`);
-      // Thêm logic navigate sau
+      if (page === 'settings') {
+        window.location.href = 'settings.html';
+      }
     }
 
     // Success Modal
