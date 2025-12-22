@@ -1,10 +1,34 @@
+/* dashboard.css */
+
+/* ===== DASHBOARD TOKENS =====
+   Mục tiêu:
+   1) Đồng nhất kích thước chữ giữa các ô.
+   2) Giảm khoảng trống giữa ảnh minh hoạ và chữ để tránh chữ to bị xuống hàng.
+   3) Riêng ô Hành khách + Thống kê: kéo ảnh gần text hơn + chừa lề phải để text không sát mép.
+*/
+:root{
+  --dash-row-gap: 12px;
+
+  /* ✅ màu nhấn chung (ĐẶT VÉ + THỐNG KÊ cùng màu) */
+  --dash-accent: #2794df;
+
+  /* Typography scale (responsive nhẹ) */
+  --dash-kicker: clamp(15px, 1.1vw, 18px);
+  --dash-title:  clamp(28px, 2.6vw, 38px);
+  --dash-title-mid: clamp(26px, 2.2vw, 34px);
+  --dash-title-sm: clamp(22px, 2.0vw, 30px);
+}
+
+/* ===== Base ===== */
 body.app-mode{
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
   margin: 0;
+  font-family: "Asap", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
+/* ===== HEADER ===== */
 .app-header{
   position: fixed;
   top:0; left:0; right:0;
@@ -15,7 +39,6 @@ body.app-mode{
   align-items:center;
   z-index:1000;
 }
-
 .app-header .bar{
   width: min(1360px, calc(100% - 48px));
   margin: 0 auto;
@@ -24,25 +47,28 @@ body.app-mode{
   align-items:center;
   gap:16px;
 }
-
 .brand{
   display:flex;
   align-items:center;
   gap:12px;
   min-width:260px;
 }
-.brand .logo{
-  width:44px; height:44px;
-  border-radius:999px;
-  background:#EEF2FF;
-  display:grid;
-  place-items:center;
-  color: var(--primary);
-  box-shadow: var(--shadow);
+.brand-logo-img{
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 12px;
 }
-.brand .title{ font-size:22px; font-weight:900; color: var(--primary); }
-.brand .slogan{ font-size:12px; color: var(--muted); font-weight:700; }
-
+.brand .title{
+  font-size:22px;
+  font-weight:900;
+  color: var(--primary);
+}
+.brand .slogan{
+  font-size:12px;
+  color:#000;
+  font-weight:400;
+}
 .nav-tabs{ display:flex; gap:14px; justify-content:center; }
 .tab{
   border:0; background:transparent;
@@ -59,8 +85,12 @@ body.app-mode{
   color:#fff;
   box-shadow: 0 12px 24px rgba(46,74,168,0.25);
 }
-
-.actions{ display:flex; justify-content:flex-end; gap:12px; min-width:260px; }
+.actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  min-width:auto;
+}
 .icon-btn{
   width:44px; height:44px;
   border:0; border-radius:14px;
@@ -68,9 +98,9 @@ body.app-mode{
   cursor:pointer;
   display:grid; place-items:center;
   position:relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .icon-btn:hover{ transform: translateY(-1px); box-shadow: var(--shadow); }
-
 .badge{
   position:absolute;
   top:6px; right:6px;
@@ -84,6 +114,7 @@ body.app-mode{
   border:2px solid #fff;
 }
 
+/* ===== PAGE ===== */
 .page{
   width: min(1360px, calc(100% - 48px));
   margin: 0 auto;
@@ -91,9 +122,10 @@ body.app-mode{
   padding-top: calc(92px + 24px);
 }
 
+/* ===== GRID ===== */
 .grid{
   display:grid;
-  grid-template-columns: 0.30fr 0.40fr 0.30fr;
+  grid-template-columns: repeat(3, 1fr);
   grid-template-rows: 160px 190px 190px;
   gap: var(--gap);
   grid-template-areas:
@@ -101,7 +133,6 @@ body.app-mode{
     "booking schedule report"
     "booking sell system";
 }
-
 @media (max-width: 1100px){
   .grid{
     grid-template-columns: 1fr;
@@ -111,6 +142,7 @@ body.app-mode{
   }
 }
 
+/* ===== TILES BASE ===== */
 .tile{
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
@@ -126,33 +158,66 @@ body.app-mode{
 .tile.disabled{ opacity:0.5; cursor:not-allowed; }
 .tile.disabled:hover{ transform:none; box-shadow: var(--shadow); }
 
-.tile .row{ display:flex; height:100%; gap:16px; align-items:center; justify-content:space-between; }
-.tile .col{ display:flex; flex-direction:column; gap:6px; }
-
-.kicker{ font-weight:900; font-size:18px; opacity:0.9; }
-.big{ font-weight:900; font-size:40px; letter-spacing:0.5px; line-height:1; }
-.big.mid{ font-size:34px; }
-.big.small{ font-size:30px; }
-
-.tile-icon{
-  width:120px; height:120px;
-  border-radius:26px;
-  background: rgba(255,255,255,0.22);
-  display:grid; place-items:center;
+.tile .row,
+.tile .col{
+  position: relative;
+  z-index: 2;
 }
-.tile-icon i{ font-size:54px; opacity:0.95; }
-.tile-icon.dark{ background: rgba(255,255,255,0.14); }
-.tile-icon.light{ background: rgba(255,255,255,0.45); }
+.tile .row{
+  display:flex;
+  height:100%;
+  /* Giảm khoảng cách giữa minh hoạ và text */
+  gap: var(--dash-row-gap);
+  align-items:center;
+  justify-content:space-between;
+}
+.tile .col{
+  display:flex;
+  flex-direction:column;
+  /* Tạo cảm giác “gọn” & đồng nhất */
+  gap:4px;
+}
 
+/* ===== TYPE ===== */
+.kicker{
+  font-weight:900;
+  font-size: var(--dash-kicker);
+  opacity:0.95;
+}
+.big{
+  font-weight:900;
+  /* Đồng nhất kích thước chữ lớn ở các ô (trừ ô Booking dùng --dash-title) */
+  font-size: var(--dash-title-mid);
+  letter-spacing:0.4px;
+  line-height:1.05;
+  white-space:nowrap;
+}
+.big.mid{ font-size: var(--dash-title-mid); }
+/* Text dài (vd: “Hệ thống / Cài đặt”) được phép xuống hàng cho đẹp */
+.big.small{
+  font-size: var(--dash-title-sm);
+  white-space:normal;
+  line-height:1.15;
+}
+
+/* ===== COLORS + AREAS ===== */
 .tile.user{ grid-area:user; background: var(--tile-user); color: var(--text); }
 .tile.lookup{ grid-area:lookup; background: var(--tile-lookup); color: var(--text); }
-.tile.customers{ grid-area:customers; background: var(--tile-customers); color:#fff; }
+
+/* ✅ đổi màu ô hành khách */
+.tile.customers{
+  grid-area:customers;
+  background: #878cbd;
+  color:#fff;
+}
+
 .tile.booking{ grid-area:booking; background: var(--tile-booking); color:#fff; }
 .tile.schedule{ grid-area:schedule; background: var(--tile-schedule); color: var(--text); }
 .tile.report{ grid-area:report; background: var(--tile-report); color:#fff; }
 .tile.sell{ grid-area:sell; background: var(--tile-sell); color: var(--text); }
 .tile.system{ grid-area:system; background: var(--tile-system); color: var(--text); }
 
+/* ===== USER CARD ===== */
 .user-wrap{ display:flex; align-items:center; gap:16px; height:100%; }
 .avatar{
   width:78px; height:78px;
@@ -164,9 +229,8 @@ body.app-mode{
   place-items:center;
   box-shadow: var(--shadow);
 }
-.avatar img{ width:100%; height:100%; object-fit:cover; display:none; }
-.avatar i{ font-size:34px; color: var(--primary); }
-
+.avatar img{ width:100%; height:100%; object-fit:cover; }
+#avatarFallback{ display:none; }
 .user-name{
   font-weight:900;
   font-size:22px;
@@ -176,7 +240,6 @@ body.app-mode{
   overflow:hidden;
   text-overflow:ellipsis;
 }
-
 .chip{
   display:inline-flex;
   align-items:center;
@@ -185,42 +248,182 @@ body.app-mode{
   border-radius:999px;
   font-weight:900;
   font-size:13px;
-  background: var(--chip-admin);
+  background: #6B7AAE;
   color:#fff;
-  margin-bottom:10px;
 }
 
-.mini-actions{ display:flex; gap:10px; flex-wrap:wrap; }
-.mini-btn{
-  border:1px solid rgba(46,74,168,0.25);
-  background: rgba(255,255,255,0.6);
-  color: var(--text);
-  padding:8px 12px;
-  border-radius:12px;
-  font-weight:800;
-  font-size:13px;
-  cursor:pointer;
+/* ===== ẢNH CHÈN CHUNG ===== */
+.tile-illus{
+  position: absolute;
+  inset: auto;
+  background: transparent;
+  pointer-events: none;
+  z-index: 1;
 }
-.mini-btn:hover{ box-shadow: var(--shadow); transform: translateY(-1px); }
-.mini-btn.danger{ border-color: rgba(239,68,68,0.35); color:#b91c1c; }
+.tile-illus img{
+  width: 100%;
+  height: 100%;
+  display:block;
+  object-fit: contain;
+}
 
-.seat-illus{
-  position:absolute;
-  right:18px;
-  bottom:18px;
-  width:170px;
-  height:170px;
-  border-radius:34px;
-  background: rgba(255,255,255,0.12);
-  display:grid; place-items:center;
+/* ===== BOOKING ===== */
+.tile.booking{
+  padding: 26px 18px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
 }
-.seat-illus i{ font-size:86px; color: rgba(255,255,255,0.85); }
+.booking-text{
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  text-align: center;
+  margin-top: 6px;
+}
+.booking-kicker{
+  color:#fff;
+  font-weight:900;
+  font-size: var(--dash-kicker);
+  margin-bottom: 8px;
+  opacity:0.95;
+}
+.booking-main{
+  color: var(--dash-accent); /* ✅ đồng bộ accent */
+  font-weight:900;
+  font-size: var(--dash-title);
+  line-height:1.05;
+  letter-spacing:0.4px;
+  text-transform: uppercase;
+  text-shadow:none;
+}
+.tile.booking .tile-illus{
+  right: 0;
+  bottom: 0;
+  width: 78%;
+  height: 70%;
+}
+.tile.booking .tile-illus img{
+  object-position:right bottom;
+}
 
-.bullets{
-  margin-top:10px;
-  color: rgba(11,27,111,0.82);
-  font-weight:800;
-  font-size:14px;
-  line-height:1.5;
+/* ===== LOOKUP ===== */
+.tile.lookup{ padding-right: 22px; }
+.tile.lookup .row{ justify-content: flex-end; }
+.tile.lookup .col{ text-align:right; width: 54%; }
+.tile.lookup .tile-illus{
+  left: 0;
+  bottom: 0;
+  width: 54%;
+  height: 110%;
 }
-.bullets .dot{ margin-right:6px; }
+.tile.lookup .tile-illus img{ object-position:left bottom; }
+
+/* ===== CUSTOMERS (kéo ảnh gần text + chừa lề phải) ===== */
+.tile.customers{ padding-right: 22px; }
+.tile.customers .row{ justify-content: flex-end; }
+
+/* Text: rộng hơn + chừa lề phải để chữ không sát mép */
+.tile.customers .col{
+  width: 60%;
+  padding-right: 14px; /* muốn xa mép phải hơn: tăng 16–20px */
+}
+
+/* Ảnh: phóng + dịch trái nhẹ để trông “gần” text hơn */
+.tile.customers .tile-illus{
+  left: -8px;
+  bottom: 0;
+  width: 52%;
+  height: 112%;
+}
+.tile.customers .tile-illus img{ object-position:left bottom; }
+
+/* ✅ text customers: 2 màu tương phản */
+.tile.customers .customers-kicker{
+  color:#100264;   /* tím đậm, tương phản với nền #878cbd */
+  opacity: 1;
+}
+.tile.customers .customers-main{
+  color:#ffffff;   /* trắng nổi bật */
+}
+
+/* ===== SCHEDULE ===== */
+.tile.schedule{ padding-left: 22px; padding-right: 22px; }
+.tile.schedule .col{ width: 56%; }
+.tile.schedule .tile-illus{
+  right: 0;
+  bottom: 0;
+  width: 46%;
+  height: 110%;
+}
+.tile.schedule .tile-illus img{ object-position:right bottom; }
+
+/* ===== REPORT (kéo ảnh gần text + chừa lề phải, vẫn giữ “không nhảy”) ===== */
+.tile.report{ padding-right: 22px; }
+.tile.report .row{ justify-content: flex-end; }
+
+/* Text report: chừa lề phải để chữ không sát mép */
+.tile.report .report-text{
+  width: 60%;
+  padding-right: 14px;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Ảnh report: phóng + dịch trái nhẹ để giảm cảm giác xa text */
+.tile.report .tile-illus{
+  left: -6px;
+  bottom: 0;
+  width: 50%;
+  height: 112%;
+}
+.tile.report .tile-illus img{ object-position:left bottom; }
+
+/* Text report */
+.tile.report .report-small{
+  font-weight: 900;
+  font-size: var(--dash-kicker);
+  line-height: 1;
+  color: rgba(255,255,255,0.88);
+}
+.tile.report .report-big{
+  font-weight: 900;
+  font-size: var(--dash-title-mid);
+  line-height: 1.05;
+  letter-spacing: 0.4px;
+  color: var(--dash-accent); /* ✅ giống màu “ĐẶT VÉ” */
+  white-space: nowrap;
+}
+
+/* ===== SELL ===== */
+.tile.sell{ padding-right: 22px; }
+.tile.sell .row{ justify-content: flex-end; }
+.tile.sell .col{ text-align:right; width: 54%; }
+.tile.sell .tile-illus{
+  left: 0;
+  bottom: 0;
+  width: 52%;
+  height: 110%;
+}
+.tile.sell .tile-illus img{ object-position:left bottom; }
+
+/* ===== SYSTEM ===== */
+.tile.system{ padding-right: 22px; }
+.tile.system .row{ justify-content: flex-end; }
+.tile.system .col{ width: 66%; }
+.tile.system .tile-illus{
+  left: 0;
+  bottom: 0;
+  width: 38%;
+  height: 100%;
+}
+.tile.system .tile-illus img{ object-position:left bottom; }
+
+/* ===== MÀU CHỮ THEO YÊU CẦU ===== */
+.tile.lookup .kicker{ color:#000; }
+.tile.lookup .big{ color:#100264; }
+
+.tile.schedule .kicker{ color:#000; }
+.tile.schedule .big{ color:#3a52a3; }
+
+.tile.sell .big{ color:#100264; }
