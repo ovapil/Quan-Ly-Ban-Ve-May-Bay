@@ -27,7 +27,7 @@ body.sell-mode{
 
 .sell-grid{
   display:grid;
-  grid-template-columns: 1.2fr 0.85fr;
+  grid-template-columns: 1.15fr 0.95fr;
   gap: 18px;
 }
 
@@ -38,16 +38,16 @@ body.sell-mode{
 .panel{
   background: rgba(255,255,255,0.70);
   border-radius: 24px;
-  padding: 18px 18px 20px;
+  padding: 0;
   border: 1px solid rgba(231,236,251,0.9);
   box-shadow: 0 10px 28px rgba(17,24,39,0.08);
   overflow: hidden;
 }
 
 .panel-head{
-  padding: 4px 6px 14px;
+  padding: 14px 16px 12px;
   border-bottom: 1px solid rgba(231,236,251,1);
-  margin-bottom: 14px;
+  margin-bottom: 0;
 }
 .panel-head h2{
   font-size: 22px;
@@ -286,7 +286,7 @@ body.sell-mode{
 }
 
 .err{
-  min-height: 16px;
+  min-height: 0;
   margin-top: 6px;
   font-size: 12px;
   font-weight: 900;
@@ -385,7 +385,7 @@ body.app-mode{
   border-bottom: 1px solid var(--bk-border);
 }
 
-.panel-body{ padding: 18px 22px; }
+.panel-body{ padding: 14px 16px 16px; }
 
 .create-layout{
   display:grid;
@@ -490,7 +490,7 @@ body.app-mode{
 .sell-page .flight-head,
 .sell-page .flight-row{
   display:grid;
-  grid-template-columns: 110px 1.2fr 140px 160px 110px 110px 140px;
+  grid-template-columns: 100px 1.6fr 130px 120px 90px 90px 140px;
   align-items:center;
   gap: 10px;
   padding: 12px 14px;
@@ -743,7 +743,7 @@ body.app-mode{
 .sell-page .flight-head,
 .sell-page .flight-row{
   /* code | route | depart | duration | seats | booked | action */
-  grid-template-columns: 110px 1.85fr 150px 160px 110px 110px 120px !important;
+  grid-template-columns: 100px 2.1fr 130px 120px 90px 90px 140px !important;
 }
 
 /* route hiển thị tối đa 2 dòng, không vỡ từng chữ */
@@ -753,6 +753,7 @@ body.app-mode{
   overflow-wrap: anywhere;   /* nếu quá dài thì mới bẻ */
   display: -webkit-box;
   -webkit-line-clamp: 2;     /* ✅ tối đa 2 dòng */
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

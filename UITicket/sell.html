@@ -31,9 +31,9 @@
       </div>
 
       <nav class="nav-tabs" aria-label="Main Navigation">
-        <button class="tab active" onclick="window.location.href='dashboard.html'">Trang chủ</button>
-        <button class="tab" onclick="window.location.href='account.html'">Tài khoản</button>
-        <button class="tab" onclick="window.location.href='settings.html'">Cài đặt</button>
+        <button class="tab active" id="tabHome">Trang chủ</button>
+        <button class="tab" id="tabAccount">Tài khoản</button>
+        <button class="tab" id="tabSettings">Cài đặt</button>
       </nav>
 
       <div class="actions">
@@ -150,7 +150,7 @@
         <div class="panel">
           <div class="panel-head">Vé Chuyến Bay</div>
 
-          <div class="panel-body">
+          <div class="panel-body panel-body-tight">
             <div class="alert" id="formAlert" style="display:none;"></div>
 
             <form id="ticketForm" autocomplete="off">
@@ -162,13 +162,13 @@
 
               <div class="form-field">
                 <label>CMND <span class="req">*</span></label>
-                <input class="input" id="cmnd" inputmode="numeric" placeholder="8–12 chữ số" />
+                <input class="input" id="cmnd" inputmode="numeric" maxlength="12" placeholder="9 hoặc 12 chữ số" />
                 <div class="err" id="errCmnd"></div>
               </div>
 
               <div class="form-field">
                 <label>Điện thoại <span class="req">*</span></label>
-                <input class="input" id="phone" inputmode="tel" placeholder="9–11 chữ số" />
+                <input class="input" id="phone" inputmode="tel" maxlength="10" placeholder="10 chữ số" />
                 <div class="err" id="errPhone"></div>
               </div>
 
