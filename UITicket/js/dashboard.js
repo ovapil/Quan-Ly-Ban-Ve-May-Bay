@@ -133,6 +133,7 @@ const Dashboard = {
   },
 
   tileClick(key) {
+
     const user = JSON.parse(localStorage.getItem('uiticket_user') || '{"role":"User"}');
 
     if (key === "system" && user.role !== "Admin") {
@@ -140,18 +141,25 @@ const Dashboard = {
       return;
     }
 
-    const map = {
-      profile: "Mở Hồ sơ (demo)",
-      lookup: "Tra cứu Chuyến bay (demo)",
-      customers: "Khách hàng / Hành khách (demo)",
-      booking: "Quản lý Đặt vé (demo)",
-      schedule: "Nhận lịch Chuyến bay (demo)",
-      report: "Báo cáo / Thống kê (demo)",
-      sell: "Bán vé (demo)",
-      system: "Hệ thống / Cài đặt (Admin) (demo)"
-    };
-    UI.toast(map[key] || "Tính năng (demo)", "success");
-  },
+
+  // ✅ thêm đoạn này
+  if (key === "schedule") {
+    window.location.href = "schedule.html";
+    return;
+  }
+
+  const map = {
+    profile: "Mở Hồ sơ (demo)",
+    lookup: "Tra cứu Chuyến bay (demo)",
+    customers: "Khách hàng / Hành khách (demo)",
+    booking: "Quản lý Đặt vé (demo)",
+    schedule: "Nhận lịch Chuyến bay (demo)",
+    report: "Báo cáo / Thống kê (demo)",
+    sell: "Bán vé (demo)",
+    system: "Hệ thống / Cài đặt (Admin) (demo)"
+  };
+  UI.toast(map[key] || "Tính năng (demo)", "success");
+},
 
   tabClick(tab) {
     if (tab === 'account') {
