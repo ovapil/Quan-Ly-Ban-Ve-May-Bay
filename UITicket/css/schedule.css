@@ -236,6 +236,17 @@
   background: #E9EAF2;
 }
 
+/* Readonly input (auto-generated fields) */
+.input[readonly]{
+  background: #D0D5E3 !important;
+  cursor: not-allowed;
+  color: #666;
+}
+
+.input[readonly]:focus{
+  outline: none;
+}
+
 select.input{
   cursor: pointer;
   appearance: none;
