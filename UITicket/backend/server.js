@@ -1438,6 +1438,35 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
 });
 
 // ============================================
+// API: LẤY MÃ CHUYẾN BAY TIẾP THEO TỰ ĐỘNG
+// ============================================
+app.get('/api/next-flight-code', verifyToken, async (req, res) => {
+  try {
+    // Lấy mã chuyến bay lớn nhất hiện tại
+    const result = await pool.query(
+      `SELECT ma_chuyen_bay FROM chuyen_bay 
+       WHERE ma_chuyen_bay LIKE 'VN%' 
+       ORDER BY ma_chuyen_bay DESC 
+       LIMIT 1`
+    );
+
+    let nextCode = 'VN000001'; // Mã mặc định nếu chưa có chuyến bay nào
+
+    if (result.rows.length > 0) {
+      const lastCode = result.rows[0].ma_chuyen_bay;
+      const lastNumber = parseInt(lastCode.substring(2)); // Lấy số sau VN
+      const nextNumber = lastNumber + 1;
+      nextCode = 'VN' + String(nextNumber).padStart(6, '0'); // Định dạng VN000001, VN000002, ...
+    }
+
+    res.json({ nextFlightCode: nextCode });
+  } catch (error) {
+    console.error('Get next flight code error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// ============================================
 // API: LẤY DANH SÁCH CHUYẾN BAY
 // ============================================
 app.get('/api/chuyen-bay', verifyToken, async (req, res) => {

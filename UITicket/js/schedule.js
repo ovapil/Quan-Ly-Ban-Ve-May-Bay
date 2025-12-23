@@ -15,8 +15,26 @@ const ReceiveSchedule = {
 
     this.bindHeader();
     await this.loadData();
+    await this.loadNextFlightCode();
     this.buildSelects();
     this.bindActions();
+  },
+
+  async loadNextFlightCode() {
+    const token = localStorage.getItem('uiticket_token');
+    try {
+      const res = await fetch(`${API_BASE_URL}/next-flight-code`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const flightCodeInput = document.getElementById('flightCode');
+      if (flightCodeInput && data.nextFlightCode) {
+        flightCodeInput.value = data.nextFlightCode;
+        console.log(`✅ Mã chuyến bay tự động: ${data.nextFlightCode}`);
+      }
+    } catch (error) {
+      console.error('Load next flight code error:', error);
+    }
   },
 
   async loadData() {
@@ -188,6 +206,9 @@ const ReceiveSchedule = {
 
     this.seatQuantities = {};
 
+    // Tự động tạo lại mã chuyến bay mới
+    this.loadNextFlightCode();
+
     UI.toast("Đã xoá form", "warn");
   },
 
@@ -205,34 +226,13 @@ const ReceiveSchedule = {
     const durationHours = parseInt($("durationHours")?.value || 0);
     const durationMinutes = parseInt($("durationMinutes")?.value || 0);
 
-    if (!ma_chuyen_bay) return UI.toast("❌ Vui lòng nhập mã chuyến bay", "warn");
+    if (!ma_chuyen_bay) return UI.toast("❌ Mã chuyến bay không được tạo. Vui lòng refresh lại trang", "warn");
     if (!san_bay_di) return UI.toast("❌ Vui lòng chọn sân bay đi", "warn");
     if (!san_bay_den) return UI.toast("❌ Vui lòng chọn sân bay đến", "warn");
     if (san_bay_di === san_bay_den) return UI.toast("❌ Sân bay đi và đến phải khác nhau", "warn");
     if (!gia_ve || gia_ve <= 0) return UI.toast("❌ Vui lòng nhập giá vé hợp lệ", "warn");
     if (!flightDate) return UI.toast("❌ Vui lòng chọn ngày bay", "warn");
     if (!departHH || !departMM) return UI.toast("❌ Vui lòng nhập giờ khởi hành", "warn");
-
-    // ========== KIỂM TRA MÃ CHUYẾN BAY TRÙNG LẬP ==========
-    try {
-      UI.showLoading?.();
-      const token = localStorage.getItem('uiticket_token');
-      const checkRes = await fetch(`${API_BASE_URL}/chuyen-bay`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const checkData = await checkRes.json();
-      const existingFlights = checkData.flights || [];
-      
-      if (existingFlights.some(f => f.ma_chuyen_bay === ma_chuyen_bay)) {
-        UI.hideLoading?.();
-        return UI.toast(`❌ Mã chuyến bay "${ma_chuyen_bay}" đã tồn tại!`, 'error');
-      }
-      UI.hideLoading?.();
-    } catch (error) {
-      UI.hideLoading?.();
-      console.error('Check duplicate error:', error);
-      return UI.toast("❌ Lỗi khi kiểm tra mã chuyến bay", 'error');
-    }
 
     if (Object.keys(this.seatQuantities).length === 0) {
       return UI.toast("❌ Vui lòng nhập số lượng ghế cho ít nhất 1 hạng vé", "warn");
