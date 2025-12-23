@@ -169,6 +169,11 @@ const Dashboard = {
     return;
   }
 
+  if (key === "sell"){
+    window.location.href = "sell.html";
+    return;
+  }
+
   const map = {
     profile: "Mở Hồ sơ (demo)",
     lookup: "Tra cứu Chuyến bay (demo)",

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Bán vé</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/sell.css" />
+</head>
+
+<body class="app-mode">
+  <div id="toast">Thông báo</div>
+
+  <!-- HEADER y hệt dashboard/booking -->
+  <header class="app-header">
+    <div class="bar">
+      <div class="brand">
+        <img class="brand-logo-img" src="assets/images/logo.png" alt="UITicket Logo" />
+        <div class="name">
+          <div class="title">UITicket</div>
+          <div class="slogan">Buy&Fly. Catch your sky!</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab active" onclick="window.location.href='dashboard.html'">Trang chủ</button>
+        <button class="tab" onclick="window.location.href='account.html'">Tài khoản</button>
+        <button class="tab" onclick="window.location.href='settings.html'">Cài đặt</button>
+      </nav>
+
+      <div class="actions">
+        <button class="icon-btn" aria-label="Notifications" id="btnNoti">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge" id="notifBadge">1</span>
+        </button>
+        <button class="icon-btn" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page sell-page">
+    <h1 class="sell-title">BÁN VÉ</h1>
+
+    <section class="sell-grid">
+      <!-- LEFT: Chọn chuyến bay -->
+      <div class="left-col">
+        <div class="panel">
+          <div class="panel-head">Chọn chuyến bay</div>
+
+          <div class="panel-body">
+            <div class="create-layout">
+              <!-- Illustration -->
+              <div class="create-illus">
+                <div class="illus-box">
+                  <i class="fa-solid fa-ticket"></i>
+                </div>
+              </div>
+
+              <!-- Search + table -->
+              <div class="create-main">
+                <div class="search-strip">
+                  <div class="field">
+                    <label>Sân bay đi</label>
+                    <select class="input" id="fromAirport">
+                      <option value="">(Tất cả)</option>
+                    </select>
+                  </div>
+
+                  <button class="swap-btn" type="button" title="Đổi chiều" id="btnSwap">
+                    <i class="fa-solid fa-right-left"></i>
+                  </button>
+
+                  <div class="field">
+                    <label>Sân bay đến</label>
+                    <select class="input" id="toAirport">
+                      <option value="">(Tất cả)</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label>&nbsp;</label>
+                    <div class="date-and-btn">
+                      <input class="input" id="departDate" type="date" />
+                      <button class="find-btn" id="btnSearch" type="button">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Tìm chuyến
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flight-table" id="flightTable">
+                  <div class="flight-head">
+                    <div>Mã chuyến</div>
+                    <div>Tuyến</div>
+                    <div>Khởi hành</div>
+                    <div>Thời gian</div>
+                    <div class="t-center">Ghế trống</div>
+                    <div class="t-center">Ghế đặt</div>
+                    <div></div>
+                  </div>
+                  <!-- JS render rows -->
+                </div>
+
+                <div class="empty-flights" id="emptyFlights" style="display:none;">
+                  Không có chuyến bay phù hợp.
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected flight info -->
+            <div class="selected-wrap" id="selectedWrap" style="display:none;">
+              <div class="sel-left">
+                <div class="sel-code" id="selCode">—</div>
+                <div class="sel-route" id="selRoute">—</div>
+
+                <div class="sel-meta">
+                  <div id="selDepart">—</div>
+                  <div id="selBase">Đơn giá: —</div>
+                </div>
+              </div>
+
+              <div class="sel-right">
+                <div class="sel-card">
+                  <div><b>Hạng 1:</b> <span id="selSeat1">0</span> ghế trống</div>
+                  <div><b>Hạng 2:</b> <span id="selSeat2">0</span> ghế trống</div>
+                  <div class="muted">
+                    <b>QĐ2:</b> H1 = 105% đơn giá • H2 = 100% đơn giá
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Form Vé chuyến bay (BM2) -->
+      <aside class="right-col">
+        <div class="panel">
+          <div class="panel-head">Vé Chuyến Bay</div>
+
+          <div class="panel-body">
+            <div class="alert" id="formAlert" style="display:none;"></div>
+
+            <form id="ticketForm" autocomplete="off">
+              <div class="form-field">
+                <label>Hành khách <span class="req">*</span></label>
+                <input class="input" id="passengerName" placeholder="Nhập họ tên..." />
+                <div class="err" id="errName"></div>
+              </div>
+
+              <div class="form-field">
+                <label>CMND <span class="req">*</span></label>
+                <input class="input" id="cmnd" inputmode="numeric" placeholder="8–12 chữ số" />
+                <div class="err" id="errCmnd"></div>
+              </div>
+
+              <div class="form-field">
+                <label>Điện thoại <span class="req">*</span></label>
+                <input class="input" id="phone" inputmode="tel" placeholder="9–11 chữ số" />
+                <div class="err" id="errPhone"></div>
+              </div>
+
+              <div class="form-field">
+                <label>Hạng vé <span class="req">*</span></label>
+                <select class="input" id="ticketClass">
+                  <option value="1">Hạng 1</option>
+                  <option value="2" selected>Hạng 2</option>
+                </select>
+
+                <div class="class-note">
+                  <span id="seatNote">Chưa chọn chuyến</span>
+                  <b id="classPrice">—</b>
+                </div>
+
+                <div class="helper">
+                  Hạng 1 = 105% đơn giá • Hạng 2 = 100% đơn giá
+                </div>
+              </div>
+
+              <div class="price-row">
+                <div class="price-label">Giá tiền <span class="req">*</span></div>
+                <div class="price-value" id="totalPrice">—</div>
+              </div>
+
+              <button class="btn-primary" id="btnSell" type="submit" disabled>Bán vé</button>
+
+              <div class="form-links">
+                <a href="#" id="btnReset">Làm mới</a>
+                <span>|</span>
+                <a href="dashboard.html" id="btnBack">Quay lại</a>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="js/sell.js"></script>
+</body>
+</html>
