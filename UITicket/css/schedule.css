@@ -1,0 +1,496 @@
+/* schedule.css - UI Nhận lịch chuyến bay (match mockup) */
+
+:root{
+  --blue: #5a8eed;
+  --card-bg: #F3F5FF;
+  --row-gap: 18px;
+  --col-gap: 26px;
+
+  --input-h: 40px;
+  --radius: 12px;
+}
+
+/* ===== Page ===== */
+.receive-page{
+  padding-top: calc(92px + 10px);
+}
+
+.receive-wrap{
+  position: relative;
+  min-height: calc(100vh - 92px - 24px);
+  padding-bottom: 80px;
+}
+
+/* ===== Title ===== */
+.receive-title{
+  text-align: center;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin: 14px 0 14px;
+  font-size: 40px;
+  line-height: 1.1;
+  color: var(--blue);
+}
+
+/* ===== Illustration ===== */
+.receive-illus{
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-535px); /* đúng canh theo mockup */
+  width: 170px;
+  height: auto;
+  z-index: 50;
+  filter: drop-shadow(0 10px 18px rgba(17,24,39,0.12));
+  pointer-events: none;
+}
+
+/* ===== Main Card ===== */
+.receive-card{
+  width: 980px;
+  max-width: calc(100% - 80px);
+  margin: 0 auto;
+  background: var(--card-bg);
+  border-radius: 26px;
+  box-shadow: 0 10px 26px rgba(17,24,39,0.08);
+  overflow: hidden;
+}
+
+/* ===== Form Grid ===== */
+.form-grid{
+  display: grid;
+  grid-template-columns: 1fr 64px 1fr;
+  column-gap: var(--col-gap);
+  row-gap: var(--row-gap);
+  padding: 22px 26px 18px;
+  align-items: center;
+}
+
+/* field: label ngang hàng với box */
+@media (min-width: 901px){
+  .form-grid .field{
+    display: grid;
+    grid-template-columns: 95px 1fr;
+    column-gap: 8px;
+    align-items: center;
+  }
+
+  .form-grid .field label{
+    margin: 0;
+    line-height: 1;
+    white-space: nowrap;
+    text-align: left;
+    justify-self: start;
+  }
+
+  .form-grid .field > .input,
+  .form-grid .field > .inline,
+  .form-grid .field > .seat-box{
+    width: 100%;
+  }
+
+  /* chỉ riêng mã chuyến bay: né icon + input vừa như mockup */
+  .field-flightcode{
+    margin-left: 90px;
+  }
+  .field-flightcode .input{
+    width: 380px;         /* đúng tỉ lệ ảnh mockup bạn gửi */
+    justify-self: start;
+  }
+}
+
+.field label{
+  display: block;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--blue);
+  margin-bottom: 0;
+}
+
+/* ===== Inputs ===== */
+.input{
+  width: 100%;
+  height: var(--input-h);
+  border: 0;
+  outline: none;
+  border-radius: var(--radius);
+  padding: 0 14px;
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 1px rgba(46,74,168,0.08);
+  font-weight: 700;
+  font-size: 15px;
+  color: #1B2B74;
+}
+
+.input.gray{
+  background: #E9EAF2;
+}
+
+select.input{
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #222 50%),
+    linear-gradient(135deg, #222 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 18px,
+    calc(100% - 12px) 18px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.inline{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.inline.compact{ gap: 8px; }
+
+.unit{
+  font-weight: 800;
+  font-size: 15px;
+  color: #111;
+}
+
+.colon{
+  font-weight: 900;
+  font-size: 16px;
+  color: #111;
+  margin: 0 2px;
+}
+
+.time{
+  width: 54px;
+  text-align: center;
+  padding: 0;
+}
+
+/* ===== Swap Button ===== */
+.swap{
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--blue);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.swap i{ font-size: 30px; }
+.swap:hover{ transform: translateY(-1px); }
+
+/* ===== Seat Box ===== */
+.seat-box{
+  height: 88px;
+  border-radius: 14px;
+  background: #E6E8F1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  gap: 12px;
+}
+
+.seat-fields{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.seat-row{
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.seat-label{
+  font-weight: 800;
+  font-size: 15px;
+  color: #111;
+}
+
+.mini-save{
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 0;
+  background: var(--blue);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.mini-save i{ font-size: 18px; }
+
+/* ===== Stopover Table ===== */
+.stopover{
+  border-top: 1px solid rgba(46,74,168,0.10);
+  background: rgba(255,255,255,0.25);
+}
+
+.stopover-head,
+.stopover-row{
+  display: grid;
+  grid-template-columns: 90px 1.25fr 1.25fr 1.5fr;
+  gap: 12px;
+  padding: 14px 22px;
+  align-items: center;
+}
+
+.stopover-head{
+  background: rgba(255,255,255,0.35);
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--blue);
+}
+
+.stopover-row{
+  border-top: 1px solid rgba(46,74,168,0.08);
+}
+
+.stt{
+  text-align: center;
+  font-weight: 900;
+  font-size: 15px;
+  color: #111;
+}
+
+/* ===== Left tools ===== */
+.left-tools{
+  position: fixed;
+  left: 18px;
+  bottom: 26px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  z-index: 1200;
+}
+
+.tool-btn{
+  width: 48px;
+  height: 48px;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.tool-btn.back{
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.12);
+  color: #111;
+}
+
+.scroll-pair{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tool-btn.circle{
+  border-radius: 999px;
+  background: #2E4AA8;
+  color: #fff;
+  box-shadow: 0 12px 22px rgba(46,74,168,0.18);
+}
+
+.tool-btn i{ font-size: 18px; }
+
+/* ===== Right FABs ===== */
+.right-fabs{
+  position: fixed;
+  right: 22px;
+  bottom: 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 1200;
+}
+
+.fab{
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 26px rgba(17,24,39,0.18);
+}
+.fab i{ font-size: 20px; }
+.fab.danger{ background: #EF4444; }
+.fab.success{ background: #22C55E; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px){
+  .receive-illus{ display: none; }
+  .receive-card{ max-width: calc(100% - 24px); }
+
+  .form-grid{
+    grid-template-columns: 1fr;
+  }
+  .swap{ display: none; }
+
+  .stopover-head,
+  .stopover-row{
+    grid-template-columns: 70px 1fr;
+  }
+
+  .stopover-head > :nth-child(3),
+  .stopover-head > :nth-child(4),
+  .stopover-row > :nth-child(3),
+  .stopover-row > :nth-child(4){
+    grid-column: 1 / -1;
+  }
+}
+/* =========================
+   PATCH: Fix đúng 3 yêu cầu
+   ========================= */
+
+/* (A) Khóa layout bằng grid-area -> không bị lệch hàng */
+.form-grid{
+  grid-template-columns: 1fr 64px 1fr;
+  grid-template-areas:
+    "code    .      price"
+    "from    swap   to"
+    "date    .      duration"
+    "time    .      seats";
+}
+
+.field-code{ grid-area: code; }
+.field-price{ grid-area: price; }
+.field-from{ grid-area: from; }
+.field-to{ grid-area: to; }
+.field-date{ grid-area: date; }
+.field-duration{ grid-area: duration; }
+.field-time{ grid-area: time; }
+.field-seats{ grid-area: seats; }
+
+.swap{
+  grid-area: swap;
+  justify-self: center;
+  align-self: center;
+}
+
+/* (B) Fix “Mã chuyến bay bị ô xám che mất chữ”
+   -> do input width cứng bị tràn qua cột label */
+@media (min-width: 901px){
+  .field-code{
+    margin-left: 90px; /* giữ đúng theo mockup bạn đang canh */
+    grid-template-columns: 120px minmax(0, 380px); /* label rộng hơn + input không tràn */
+  }
+
+  .field-code .input{
+    width: 100% !important;
+    max-width: 380px;
+  }
+}
+
+/* (C) Kéo các nút (lên/xuống + xoá/lưu) lại gần khung card hơn */
+
+.right-fabs{
+  right: max(22px, calc(50% - 490px - 70px));
+}
+/* ===== Make Up/Down giống FAB (trash/save) ===== */
+
+/* đưa cụm trái gần card giống bên phải (nếu bạn đã dùng patch trước thì giữ nguyên) */
+.left-tools{
+  left: max(18px, calc(50% - 490px - 70px));
+  bottom: 34px;
+}
+
+
+/* =============================
+   Làm nút LÊN/XUỐNG giống hệt FAB bên phải
+   ============================= */
+.scroll-pair .tool-btn.circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  background: #2E4AA8; /* cùng màu xanh với FAB Lưu */
+  color: #fff;
+  box-shadow: 0 14px 26px rgba(17,24,39,0.18);
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+}
+
+.scroll-pair .tool-btn.circle i {
+  font-size: 20px; /* đồng bộ kích thước icon */
+}
+
+.scroll-pair .tool-btn.circle:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+/* Căn vị trí gần khung “Nhận lịch chuyến bay” hơn */
+.left-tools {
+  left: max(18px, calc(50% - 490px - 70px));
+  bottom: 34px;
+}
+
+/* Dịch cả cụm nút bên trái (Back + Up/Down) sang trái */
+.left-tools{
+  transform: translateX(-60px); /* đổi -10px thành -6/-14 tuỳ bạn */
+}
+/* Chỉ chỉnh khoảng cách label <-> input của Mã chuyến bay */
+.field-code{
+  column-gap: 14px;   /* tăng/giảm khoảng cách ngang giữa chữ và ô */
+}
+
+/* Nếu bạn muốn dịch ô nhập ra xa chữ mà không đổi layout label */
+.field-code .input{
+  margin-left: 35px;   /* tăng/giảm tuỳ ý */
+}
+/* Chỉ dịch 2 cụm này sang trái, không ảnh hưởng cái khác */
+.field-duration,
+.field-seats{
+  transform: translateX(-72px); /* chỉnh -8/-10/-16 tuỳ bạn */
+}
+
+/* Chỉ đẩy phần INPUT/BOX sang phải (không đụng label, không đụng UI khác) */
+.field-duration > .inline{
+  margin-left: 24px;   /* tăng/giảm tuỳ ý */
+}
+
+.field-seats > .seat-box{
+  margin-left: 24px;   /* tăng/giảm tuỳ ý */
+}
+/* Đẩy riêng ô nhập GIÁ VÉ sang trái */
+.field-price .input{
+  margin-left: -30px;   /* âm = kéo sang trái, chỉnh -6/-10/-14 tuỳ bạn */
+}
+/* Đẩy cụm nút bên trái (Back + Up/Down) lên cao hơn */
+.left-tools{
+  bottom: 70px;   /* tăng số là lên cao (vd 50, 60, 70...) */
+}
+/* Đẩy riêng nút Back (trắng) lên */
+.tool-btn.back{
+  margin-bottom: 500px;   /* tăng số là nó lên cao hơn */
+}
+/* Đẩy cụm nút bên phải (Xoá + Lưu) lên cao */
+.right-fabs{
+  bottom: 62px;   /* tăng số là lên cao hơn (vd 50, 60, 70...) */
+}
+
+/* Thu nhỏ chiều rộng 2 ô trắng trong seat-box */
+.field-seats .seat-box .seat-row{
+  grid-template-columns: 72px 150px;  /* 150px = ô trắng nhỏ lại (đổi 140-180 tuỳ ý) */
+}
+
+/* Đảm bảo input/select không bị kéo full */
+.field-seats .seat-box .input{
+  width: 150px;
+}
+
+

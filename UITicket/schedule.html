@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Nhận lịch chuyến bay</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/schedule.css" />
+</head>
+
+<body class="app-mode">
+  <div id="toast">Thông báo</div>
+
+  <header class="app-header">
+    <div class="bar">
+      <div class="brand">
+        <img class="brand-logo-img" src="assets/images/logo.png" alt="UITicket Logo" />
+        <div class="name">
+          <div class="title">UITicket</div>
+          <div class="slogan">Buy&Fly. Catch your sky!</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab active" id="tabHome">Trang chủ</button>
+        <button class="tab" id="tabAccount">Tài khoản</button>
+        <button class="tab" id="tabSettings">Cài đặt</button>
+      </nav>
+
+      <div class="actions">
+        <button class="icon-btn" id="btnNoti" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge" id="notifBadge">1</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page receive-page">
+    <section class="receive-wrap">
+      <img class="receive-illus" src="assets/images/illus-canlendarblue.png" alt="Calendar" />
+
+      <h1 class="receive-title">NHẬN LỊCH CHUYẾN BAY</h1>
+
+      <div class="receive-card">
+        <!-- ===== FORM TOP ===== -->
+        <form class="form-grid" autocomplete="off">
+  <!-- Mã chuyến bay -->
+  <div class="field field-code field-flightcode">
+    <label>Mã chuyến bay</label>
+    <input class="input gray" id="flightCode" placeholder="" />
+  </div>
+
+  <!-- Giá vé -->
+  <div class="field field-price">
+    <label>Giá vé</label>
+    <input class="input gray" id="ticketPrice" placeholder="" />
+  </div>
+
+  <!-- Sân bay đi -->
+  <div class="field field-from">
+    <label>Sân bay đi</label>
+    <select class="input" id="fromAirport"></select>
+  </div>
+
+  <!-- Swap -->
+  <button type="button" class="swap" id="btnSwap" aria-label="Swap">
+    <i class="fa-solid fa-arrows-rotate"></i>
+  </button>
+
+  <!-- Sân bay đến -->
+  <div class="field field-to">
+    <label>Sân bay đến</label>
+    <select class="input" id="toAirport"></select>
+  </div>
+
+  <!-- Ngày -->
+  <div class="field field-date">
+    <label>Ngày</label>
+    <input class="input gray" id="flightDate" type="date" />
+  </div>
+
+  <!-- Thời gian bay -->
+  <div class="field field-duration">
+    <label>Thời gian bay</label>
+    <div class="inline">
+      <select class="input" id="durationHours"></select>
+      <span class="unit">giờ</span>
+      <select class="input" id="durationMinutes"></select>
+      <span class="unit">phút</span>
+    </div>
+  </div>
+
+  <!-- Giờ -->
+  <div class="field field-time">
+    <label>Giờ</label>
+    <div class="inline">
+      <input class="input gray time" id="departHH" placeholder="" inputmode="numeric" />
+      <span class="colon">:</span>
+      <input class="input gray time" id="departMM" placeholder="" inputmode="numeric" />
+      <select class="input" id="meridiem">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Số lượng ghế -->
+  <div class="field field-seats">
+    <label>Số lượng ghế</label>
+    <div class="seat-box">
+      <div class="seat-fields">
+        <div class="seat-row">
+          <span class="seat-label">Hạng</span>
+          <select class="input" id="seatClass">
+            <option value="Eco">Eco</option>
+            <option value="Business">Business</option>
+            <option value="First">First</option>
+          </select>
+        </div>
+
+        <div class="seat-row">
+          <span class="seat-label">Số lượng</span>
+          <input class="input" id="seatQty" placeholder="" inputmode="numeric" />
+        </div>
+      </div>
+
+      <button type="button" class="mini-save" id="btnMiniSave" aria-label="Save seat">
+        <i class="fa-solid fa-floppy-disk"></i>
+      </button>
+    </div>
+  </div>
+</form>
+
+        <!-- ===== STOPOVER TABLE ===== -->
+        <div class="stopover">
+          <div class="stopover-head">
+            <div>STT</div>
+            <div>Sân bay trung gian</div>
+            <div>Thời gian dừng</div>
+            <div>Ghi chú</div>
+          </div>
+
+          <div class="stopover-row">
+            <div class="stt">1</div>
+            <div><select class="input" id="stopAirport1"></select></div>
+            <div>
+              <div class="inline compact">
+                <select class="input" id="stopH1"></select>
+                <span class="unit">giờ</span>
+                <select class="input" id="stopM1"></select>
+                <span class="unit">phút</span>
+              </div>
+            </div>
+            <div><input class="input gray" id="stopNote1" /></div>
+          </div>
+
+          <div class="stopover-row">
+            <div class="stt">2</div>
+            <div><select class="input" id="stopAirport2"></select></div>
+            <div>
+              <div class="inline compact">
+                <select class="input" id="stopH2"></select>
+                <span class="unit">giờ</span>
+                <select class="input" id="stopM2"></select>
+                <span class="unit">phút</span>
+              </div>
+            </div>
+            <div><input class="input gray" id="stopNote2" /></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEFT TOOLBAR -->
+      <div class="left-tools">
+        <button class="tool-btn back" id="btnBack" title="Quay lại">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+        <div class="scroll-pair">
+          <button class="tool-btn circle" id="btnUp" title="Lên">
+            <i class="fa-solid fa-chevron-up"></i>
+          </button>
+          <button class="tool-btn circle" id="btnDown" title="Xuống">
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT FABs -->
+      <div class="right-fabs">
+        <button class="fab danger" id="btnDelete" title="Xoá">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+        <button class="fab success" id="btnSave" title="Lưu">
+          <i class="fa-solid fa-bookmark"></i>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/schedule.js"></script>
+</body>
+</html>
