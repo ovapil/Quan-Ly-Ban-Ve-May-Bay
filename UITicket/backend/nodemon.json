@@ -1,0 +1,7 @@
+{
+  "watch": ["server.js"],
+  "ignore": ["node_modules", ".env", "*.log", ".git", "package-lock.json"],
+  "ext": "js",
+  "delay": 500,
+  "verbose": false
+}

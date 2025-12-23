@@ -19,6 +19,27 @@
 <body class="app-mode">
   <div id="toast">Thông báo</div>
 
+  <!-- MODAL HƯỚNG DẪN -->
+  <div id="seatGuideModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📌 Hướng dẫn Số ghế</h2>
+      </div>
+      <div class="modal-body">
+        <p>✅ <strong>Bước 1:</strong> Chọn Hạng vé từ danh sách</p>
+        <p>✅ <strong>Bước 2:</strong> Nhập số lượng ghế</p>
+        <p>✅ <strong>Bước 3:</strong> Nhấn nút <strong>Lưu tạm</strong> (💾) để lưu hạng vé này</p>
+        <p>✅ <strong>Bước 4:</strong> Lặp lại với các hạng vé khác</p>
+        <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+          <strong>Ví dụ:</strong> Nhập Hạng Phổ thông 100 ghế → Lưu → Chọn Hạng Thương gia 50 ghế → Lưu
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-close" id="btnCloseSeatGuideModal">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <header class="app-header">
     <div class="bar">
       <div class="brand">
@@ -53,92 +74,96 @@
       <div class="receive-card">
         <!-- ===== FORM TOP ===== -->
         <form class="form-grid" autocomplete="off">
-  <!-- Mã chuyến bay -->
-  <div class="field field-code field-flightcode">
-    <label>Mã chuyến bay</label>
-    <input class="input gray" id="flightCode" placeholder="" />
-  </div>
+          <!-- Mã chuyến bay -->
+          <div class="field field-code field-flightcode">
+            <label>Mã chuyến bay</label>
+            <input class="input gray" id="flightCode" placeholder="" />
+          </div>
 
-  <!-- Giá vé -->
-  <div class="field field-price">
-    <label>Giá vé</label>
-    <input class="input gray" id="ticketPrice" placeholder="" />
-  </div>
+          <!-- Giá vé -->
+          <div class="field field-price">
+            <label>Giá vé</label>
+            <input class="input gray" id="ticketPrice" placeholder="" />
+          </div>
 
-  <!-- Sân bay đi -->
-  <div class="field field-from">
-    <label>Sân bay đi</label>
-    <select class="input" id="fromAirport"></select>
-  </div>
+          <!-- Sân bay đi -->
+          <div class="field field-from">
+            <label>Sân bay đi</label>
+            <select class="input" id="fromAirport"></select>
+          </div>
 
-  <!-- Swap -->
-  <button type="button" class="swap" id="btnSwap" aria-label="Swap">
-    <i class="fa-solid fa-arrows-rotate"></i>
-  </button>
+          <!-- Swap -->
+          <button type="button" class="swap" id="btnSwap" aria-label="Swap">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
 
-  <!-- Sân bay đến -->
-  <div class="field field-to">
-    <label>Sân bay đến</label>
-    <select class="input" id="toAirport"></select>
-  </div>
+          <!-- Sân bay đến -->
+          <div class="field field-to">
+            <label>Sân bay đến</label>
+            <select class="input" id="toAirport"></select>
+          </div>
 
-  <!-- Ngày -->
-  <div class="field field-date">
-    <label>Ngày</label>
-    <input class="input gray" id="flightDate" type="date" />
-  </div>
+          <!-- Ngày -->
+          <div class="field field-date">
+            <label>Ngày</label>
+            <input class="input gray" id="flightDate" type="date" />
+          </div>
 
-  <!-- Thời gian bay -->
-  <div class="field field-duration">
-    <label>Thời gian bay</label>
-    <div class="inline">
-      <select class="input" id="durationHours"></select>
-      <span class="unit">giờ</span>
-      <select class="input" id="durationMinutes"></select>
-      <span class="unit">phút</span>
-    </div>
-  </div>
+          <!-- Thời gian bay -->
+          <div class="field field-duration">
+            <label>Thời gian bay</label>
+            <div class="inline">
+              <select class="input" id="durationHours"></select>
+              <span class="unit">giờ</span>
+              <select class="input" id="durationMinutes"></select>
+              <span class="unit">phút</span>
+            </div>
+          </div>
 
-  <!-- Giờ -->
-  <div class="field field-time">
-    <label>Giờ</label>
-    <div class="inline">
-      <input class="input gray time" id="departHH" placeholder="" inputmode="numeric" />
-      <span class="colon">:</span>
-      <input class="input gray time" id="departMM" placeholder="" inputmode="numeric" />
-      <select class="input" id="meridiem">
-        <option value="AM">AM</option>
-        <option value="PM">PM</option>
-      </select>
-    </div>
-  </div>
+          <!-- Giờ -->
+          <div class="field field-time">
+            <label>Giờ</label>
+            <div class="inline">
+              <input class="input gray time" id="departHH" placeholder="" inputmode="numeric" />
+              <span class="colon">:</span>
+              <input class="input gray time" id="departMM" placeholder="" inputmode="numeric" />
+              <select class="input" id="meridiem">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+          </div>
 
-  <!-- Số lượng ghế -->
-  <div class="field field-seats">
-    <label>Số lượng ghế</label>
-    <div class="seat-box">
-      <div class="seat-fields">
-        <div class="seat-row">
-          <span class="seat-label">Hạng</span>
-          <select class="input" id="seatClass">
-            <option value="Eco">Eco</option>
-            <option value="Business">Business</option>
-            <option value="First">First</option>
-          </select>
-        </div>
+          <!-- Số lượng ghế -->
+          <div class="field field-seats">
+            <label>Số lượng ghế</label>
+            <div class="seat-box">
+              <div class="seat-fields">
+                <div class="seat-row">
+                  <span class="seat-label">Hạng</span>
+                  <select class="input" id="seatClass">
+                    <option value="Eco">Eco</option>
+                    <option value="Business">Business</option>
+                    <option value="First">First</option>
+                  </select>
+                </div>
 
-        <div class="seat-row">
-          <span class="seat-label">Số lượng</span>
-          <input class="input" id="seatQty" placeholder="" inputmode="numeric" />
-        </div>
-      </div>
+                <div class="seat-row">
+                  <span class="seat-label">Số lượng</span>
+                  <input class="input" id="seatQty" placeholder="" inputmode="numeric" />
+                </div>
+              </div>
 
-      <button type="button" class="mini-save" id="btnMiniSave" aria-label="Save seat">
-        <i class="fa-solid fa-floppy-disk"></i>
-      </button>
-    </div>
-  </div>
-</form>
+              <button type="button" class="mini-save" id="btnMiniSave" aria-label="Save seat">
+                <i class="fa-solid fa-floppy-disk"></i>
+              </button>
+
+              <button type="button" class="mini-info" id="btnSeatInfo" aria-label="Seat info" title="Hướng dẫn">
+                <i class="fa-solid fa-circle-info"></i>
+              </button>
+            </div>
+          </div>
+        </form>
 
         <!-- ===== STOPOVER TABLE ===== -->
         <div class="stopover">

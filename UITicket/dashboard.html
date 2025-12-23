@@ -67,7 +67,7 @@
       <div class="tile user" tabindex="0" role="button" onclick="Dashboard.tileClick('profile')">
         <div class="user-wrap">
           <div class="avatar">
-            <img id="avatarImg" src="assets/images/avatar.png" alt="Avatar" />
+            <img id="avatarImg" alt="Avatar" />
             <i class="fa-solid fa-user" id="avatarFallback"></i>
           </div>
 
@@ -169,15 +169,16 @@
         </div>
       </div>
 
-      <!-- HỆ THỐNG -->
-      <div class="tile system" id="systemTile" tabindex="0" role="button" onclick="Dashboard.tileClick('system')">
+      <!-- CẬP NHẬT THÔNG TIN -->
+      <div class="tile info" id="infoTile" tabindex="0" role="button" onclick="Dashboard.tileClick('info')">
         <div class="row">
           <div class="tile-illus">
-            <img src="assets/images/illus-system.png" alt="Illustration system" />
+            <img src="assets/images/illus-info.png" alt="Illustration info" />
           </div>
 
-          <div class="col">
-            <div class="big small">Hệ thống / Cài đặt</div>
+          <div class="col" style="text-align:right;">
+            <div class="report-small">Cập nhật</div>
+            <div class="report-big">THÔNG TIN</div>          
           </div>
         </div>
       </div>
@@ -248,6 +249,67 @@
       </div>
 
       <div id="resetList" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ✅ THÊM: System Info Modal -->
+  <div id="infoModal" class="modal hidden">
+    <div class="modal-card info-card">
+      <div class="modal-head">
+        <h3>Cập nhật thông tin hệ thống</h3>
+        <button class="modal-close" onclick="Dashboard.closeInfoModal()">×</button>
+      </div>
+
+      <div class="modal-body info-body">
+        <div class="info-tabs">
+          <button class="info-tab active" data-tab="airport" onclick="Dashboard.switchInfoTab('airport')">
+            <i class="fa-solid fa-plane"></i> Sân bay
+          </button>
+          <button class="info-tab" data-tab="class" onclick="Dashboard.switchInfoTab('class')">
+            <i class="fa-solid fa-layer-group"></i> Hạng vé
+          </button>
+          <button class="info-tab" data-tab="system" onclick="Dashboard.switchInfoTab('system')">
+            <i class="fa-solid fa-sliders"></i> Tham số
+          </button>
+        </div>
+
+        <!-- SÂN BAY TAB -->
+        <div class="info-tab-content active" id="airportTab">
+          <h4>Quản lý sân bay</h4>
+          <div class="info-form">
+            <input type="text" id="airportCode" placeholder="Mã sân bay (vd: HAN)" />
+            <input type="text" id="airportName" placeholder="Tên sân bay (vd: Nội Bài)" />
+            <input type="text" id="airportCity" placeholder="Thành phố" />
+            <input type="text" id="airportCountry" placeholder="Quốc gia" />
+            <button class="info-btn" onclick="Dashboard.addAirport()">+ Thêm sân bay</button>
+          </div>
+          <div id="airportList" class="info-list"></div>
+        </div>
+
+        <!-- HẠNG VÉ TAB -->
+        <div class="info-tab-content" id="classTab">
+          <h4>Quản lý hạng vé</h4>
+          <div class="info-form">
+            <input type="text" id="className" placeholder="Mã hạng vé (vd: ECO)" />
+            <input type="text" id="classDisplayName" placeholder="Tên hạng vé (vd: Economy)" />
+            <input type="number" id="classPriceRatio" placeholder="Tỷ lệ giá (vd: 1.0)" step="0.1" />
+            <button class="info-btn" onclick="Dashboard.addClass()">+ Thêm hạng vé</button>
+          </div>
+          <div id="classList" class="info-list"></div>
+        </div>
+
+        <!-- THAM SỐ HỆ THỐNG TAB -->
+        <div class="info-tab-content" id="systemTab">
+          <h4>Quản lý tham số hệ thống</h4>
+          <div class="info-form">
+            <input type="text" id="paramName" placeholder="Tên tham số (vd: min_flight_duration)" />
+            <input type="text" id="paramValue" placeholder="Giá trị" />
+            <input type="text" id="paramDesc" placeholder="Mô tả (tuỳ chọn)" />
+            <button class="info-btn" onclick="Dashboard.addParameter()">+ Thêm tham số</button>
+          </div>
+          <div id="parameterList" class="info-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 

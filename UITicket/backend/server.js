@@ -219,6 +219,7 @@ app.get('/api/auth/verify', verifyToken, async (req, res) => {
 
     res.json({ user });
   } catch (error) {
+    console.error('❌ Verify error:', error);
     res.status(500).json({ error: 'Lỗi server' });
   }
 });
@@ -1035,6 +1036,436 @@ app.post("/api/user/change-avatar", verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server', details: error.message });
   }
 });
+
+// ============================================
+// ADMIN: AIRPORT MANAGEMENT
+// ============================================
+app.get('/api/admin/airports', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT ma_san_bay, ten_san_bay, thanh_pho, quoc_gia FROM san_bay ORDER BY ma_san_bay'
+    );
+    res.json({ airports: result.rows });
+  } catch (error) {
+    console.error('GET /api/admin/airports error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+app.post('/api/admin/airports', verifyToken, requireAdmin, async (req, res) => {
+  let { code, name, city, country } = req.body || {};
+
+  try {
+    code = String(code || '').trim().toUpperCase();
+    name = String(name || '').trim();
+    city = String(city || '').trim();
+    country = String(country || '').trim();
+
+    if (!code || !name) {
+      return res.status(400).json({ error: 'Mã sân bay & tên sân bay là bắt buộc' });
+    }
+
+    const existing = await pool.query(
+      'SELECT ma_san_bay FROM san_bay WHERE ma_san_bay = $1',
+      [code]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Sân bay này đã tồn tại' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO san_bay (ma_san_bay, ten_san_bay, thanh_pho, quoc_gia)
+       VALUES ($1, $2, $3, $4)
+       RETURNING ma_san_bay, ten_san_bay, thanh_pho, quoc_gia`,
+      [code, name, city, country]
+    );
+
+    res.status(201).json({
+      message: 'Thêm sân bay thành công',
+      airport: result.rows[0]
+    });
+  } catch (error) {
+    console.error('POST /api/admin/airports error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+app.delete('/api/admin/airports/:code', verifyToken, requireAdmin, async (req, res) => {
+  const code = String(req.params.code).trim().toUpperCase();
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM san_bay WHERE ma_san_bay = $1 RETURNING ma_san_bay',
+      [code]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Sân bay không tồn tại' });
+    }
+
+    res.json({ message: 'Đã xóa sân bay' });
+  } catch (error) {
+    console.error('DELETE /api/admin/airports/:code error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// ============================================
+// ADMIN: CLASS MANAGEMENT (HẠNG VÉ)
+// ============================================
+app.get('/api/admin/classes', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT ma_hang_ve, ten_hang_ve, ti_le_gia FROM hang_ve ORDER BY ma_hang_ve'
+    );
+    res.json({ classes: result.rows });
+  } catch (error) {
+    console.error('GET /api/admin/classes error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+app.post('/api/admin/classes', verifyToken, requireAdmin, async (req, res) => {
+  let { code, name, ratio } = req.body || {};
+
+  try {
+    code = String(code || '').trim().toUpperCase();
+    name = String(name || '').trim();
+    ratio = parseFloat(ratio);
+
+    if (!code || !name || isNaN(ratio)) {
+      return res.status(400).json({ error: 'Mã hạng vé, tên & tỷ lệ giá là bắt buộc' });
+    }
+
+    const existing = await pool.query(
+      'SELECT ma_hang_ve FROM hang_ve WHERE ma_hang_ve = $1',
+      [code]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Hạng vé này đã tồn tại' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO hang_ve (ma_hang_ve, ten_hang_ve, ti_le_gia)
+       VALUES ($1, $2, $3)
+       RETURNING ma_hang_ve, ten_hang_ve, ti_le_gia`,
+      [code, name, ratio]
+    );
+
+    res.status(201).json({
+      message: 'Thêm hạng vé thành công',
+      class: result.rows[0]
+    });
+  } catch (error) {
+    console.error('POST /api/admin/classes error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+app.delete('/api/admin/classes/:code', verifyToken, requireAdmin, async (req, res) => {
+  const code = String(req.params.code).trim().toUpperCase();
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM hang_ve WHERE ma_hang_ve = $1 RETURNING ma_hang_ve',
+      [code]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Hạng vé không tồn tại' });
+    }
+
+    res.json({ message: 'Đã xóa hạng vé' });
+  } catch (error) {
+    console.error('DELETE /api/admin/classes/:code error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// ============================================
+// ADMIN: PARAMETER MANAGEMENT (THAM SỐ)
+// ============================================
+app.get('/api/admin/parameters', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT ten_tham_so, gia_tri, mo_ta FROM tham_so ORDER BY ten_tham_so'
+    );
+    res.json({ parameters: result.rows });
+  } catch (error) {
+    console.error('GET /api/admin/parameters error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+app.post('/api/admin/parameters', verifyToken, requireAdmin, async (req, res) => {
+  let { name, value, desc } = req.body || {};
+
+  try {
+    name = String(name || '').trim();
+    value = String(value || '').trim();
+    desc = String(desc || '').trim();
+
+    if (!name || !value) {
+      return res.status(400).json({ error: 'Tên tham số & giá trị là bắt buộc' });
+    }
+
+    const existing = await pool.query(
+      'SELECT ten_tham_so FROM tham_so WHERE ten_tham_so = $1',
+      [name]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Tham số này đã tồn tại' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO tham_so (ten_tham_so, gia_tri, mo_ta)
+       VALUES ($1, $2, $3)
+       RETURNING ten_tham_so, gia_tri, mo_ta`,
+      [name, value, desc || null]
+    );
+
+    res.status(201).json({
+      message: 'Thêm tham số thành công',
+      parameter: result.rows[0]
+    });
+  } catch (error) {
+    console.error('POST /api/admin/parameters error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+app.delete('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
+  const name = String(req.params.name).trim();
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM tham_so WHERE ten_tham_so = $1 RETURNING ten_tham_so',
+      [name]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Tham số không tồn tại' });
+    }
+
+    res.json({ message: 'Đã xóa tham số' });
+  } catch (error) {
+    console.error('DELETE /api/admin/parameters/:name error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// ============================================
+// API: LẤY DANH SÁCH SÂN BAY (cho tất cả user)
+// ============================================
+app.get('/api/airports', verifyToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT ma_san_bay, ten_san_bay FROM san_bay ORDER BY ten_san_bay'
+    );
+    res.json({ airports: result.rows });
+  } catch (error) {
+    console.error('Get airports error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// ============================================
+// API: LẤY DANH SÁCH HẠNG VÉ (cho tất cả user)
+// ============================================
+app.get('/api/hang-ve', verifyToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT ma_hang_ve, ten_hang_ve, ti_le_gia FROM hang_ve ORDER BY ti_le_gia'
+    );
+    res.json({ hangVe: result.rows });
+  } catch (error) {
+    console.error('Get hang ve error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// ============================================
+// API: LẤY THAM SỐ HỆ THỐNG (cho tất cả user)
+// ============================================
+app.get('/api/tham-so', verifyToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM tham_so');
+    
+    const thamSo = {};
+    result.rows.forEach(row => {
+      thamSo[row.ten_tham_so] = row.gia_tri;
+    });
+    
+    res.json({ thamSo });
+  } catch (error) {
+    console.error('Get tham so error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// ============================================
+// API: NHẬN LỊCH CHUYẾN BAY (FIXED VERSION)
+// ============================================
+app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
+  const {
+    ma_chuyen_bay,
+    san_bay_di,
+    san_bay_den,
+    gia_ve,
+    ngay_gio_bay,
+    thoi_gian_bay,
+    hang_ve,
+    san_bay_trung_gian
+  } = req.body;
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // ========== BƯỚC 1: LẤY THAM SỐ HỆ THỐNG ==========
+    const thamSoResult = await client.query('SELECT * FROM tham_so');
+    const thamSo = {};
+    thamSoResult.rows.forEach(row => {
+      thamSo[row.ten_tham_so] = parseInt(row.gia_tri);
+    });
+
+    console.log('📋 Tham số hệ thống:', thamSo);
+
+    // ========== BƯỚC 2: VALIDATE DỮ LIỆU ==========
+    
+    // Validate thông tin cơ bản
+    if (!ma_chuyen_bay || !san_bay_di || !san_bay_den || !gia_ve || !ngay_gio_bay || !thoi_gian_bay) {
+      throw new Error('Thiếu thông tin chuyến bay bắt buộc');
+    }
+
+    // Validate thời gian bay
+    if (thoi_gian_bay < thamSo.thoi_gian_bay_toi_thieu) {
+      throw new Error(`Thời gian bay tối thiểu là ${thamSo.thoi_gian_bay_toi_thieu} phút`);
+    }
+
+    // Validate số sân bay trung gian
+    if (san_bay_trung_gian && san_bay_trung_gian.length > thamSo.so_san_bay_trung_gian_toi_da) {
+      throw new Error(`Số sân bay trung gian tối đa là ${thamSo.so_san_bay_trung_gian_toi_da}`);
+    }
+
+    // Validate thời gian dừng
+    if (san_bay_trung_gian && san_bay_trung_gian.length > 0) {
+      for (const sb of san_bay_trung_gian) {
+        if (sb.thoi_gian_dung < thamSo.thoi_gian_dung_toi_thieu || 
+            sb.thoi_gian_dung > thamSo.thoi_gian_dung_toi_da) {
+          throw new Error(`Thời gian dừng phải từ ${thamSo.thoi_gian_dung_toi_thieu} đến ${thamSo.thoi_gian_dung_toi_da} phút`);
+        }
+      }
+    }
+
+    // Validate số lượng ghế
+    if (!hang_ve || hang_ve.length === 0) {
+      throw new Error('Phải nhập số lượng ghế cho ít nhất 1 hạng vé');
+    }
+
+    for (const hv of hang_ve) {
+      if (!hv.so_luong_ghe || hv.so_luong_ghe <= 0) {
+        throw new Error('Số lượng ghế phải lớn hơn 0');
+      }
+    }
+
+    // ========== BƯỚC 3: KIỂM TRA MÃ CHUYẾN BAY ĐÃ TỒN TẠI ==========
+    const existingFlight = await client.query(
+      'SELECT ma_chuyen_bay FROM chuyen_bay WHERE ma_chuyen_bay = $1',
+      [ma_chuyen_bay]
+    );
+
+    if (existingFlight.rows.length > 0) {
+      throw new Error('Mã chuyến bay đã tồn tại');
+    }
+
+    // ========== BƯỚC 4: LƯU CHUYẾN BAY ==========
+    await client.query(
+      `INSERT INTO chuyen_bay 
+       (ma_chuyen_bay, san_bay_di, san_bay_den, gia_ve, ngay_gio_bay, thoi_gian_bay, trang_thai)
+       VALUES ($1, $2, $3, $4, $5, $6, 1)`,
+      [ma_chuyen_bay, san_bay_di, san_bay_den, gia_ve, ngay_gio_bay, thoi_gian_bay]
+    );
+
+    console.log(`✅ Đã lưu chuyến bay: ${ma_chuyen_bay}`);
+
+    // ========== BƯỚC 5: LƯU HẠNG VÉ ==========
+    for (const hv of hang_ve) {
+      await client.query(
+        `INSERT INTO chuyen_bay_hang_ve (ma_chuyen_bay, ma_hang_ve, so_luong_ghe)
+         VALUES ($1, $2, $3)`,
+        [ma_chuyen_bay, hv.ma_hang_ve, hv.so_luong_ghe]
+      );
+      console.log(`✅ Đã lưu ghế hạng ${hv.ma_hang_ve}: ${hv.so_luong_ghe} ghế`);
+    }
+
+    // ========== BƯỚC 6: LƯU SÂN BAY TRUNG GIAN ==========
+    if (san_bay_trung_gian && san_bay_trung_gian.length > 0) {
+      for (let i = 0; i < san_bay_trung_gian.length; i++) {
+        const sb = san_bay_trung_gian[i];
+        await client.query(
+          `INSERT INTO chi_tiet_san_bay_trung_gian 
+           (ma_chuyen_bay, ma_san_bay, thu_tu_dung, thoi_gian_dung, ghi_chu)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [ma_chuyen_bay, sb.ma_san_bay, i + 1, sb.thoi_gian_dung, sb.ghi_chu || '']
+        );
+        console.log(`✅ Đã lưu sân bay trung gian: ${sb.ma_san_bay}`);
+      }
+    }
+
+    await client.query('COMMIT');
+
+    res.status(201).json({
+      message: '✅ Đã lưu lịch chuyến bay thành công',
+      ma_chuyen_bay,
+      summary: {
+        hang_ve: hang_ve.length,
+        san_bay_trung_gian: san_bay_trung_gian ? san_bay_trung_gian.length : 0
+      }
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Create flight error:', error);
+    res.status(400).json({ error: error.message || 'Lỗi tạo chuyến bay' });
+  } finally {
+    client.release();
+  }
+});
+
+// ============================================
+// API: LẤY DANH SÁCH CHUYẾN BAY
+// ============================================
+app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        cb.ma_chuyen_bay,
+        cb.gia_ve,
+        cb.ngay_gio_bay,
+        cb.thoi_gian_bay,
+        sb_di.ten_san_bay AS san_bay_di,
+        sb_den.ten_san_bay AS san_bay_den,
+        cb.trang_thai
+      FROM chuyen_bay cb
+      JOIN san_bay sb_di ON cb.san_bay_di = sb_di.ma_san_bay
+      JOIN san_bay sb_den ON cb.san_bay_den = sb_den.ma_san_bay
+      WHERE cb.trang_thai = 1
+      ORDER BY cb.ngay_gio_bay DESC
+    `);
+
+    res.json({ flights: result.rows });
+  } catch (error) {
+    console.error('Get flights error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+
 
 // ============================================
 // START SERVER

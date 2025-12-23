@@ -21,20 +21,28 @@ const Dashboard = {
     const token = localStorage.getItem('uiticket_token');
 
     if (!token) {
+      console.log('❌ Không có token, redirect về index');
       window.location.href = "index.html";
       return;
     }
+
+    console.log('✅ Token tìm thấy:', token.substring(0, 20) + '...');
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/verify`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
+      console.log('Verify response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Token không hợp lệ');
+        const errData = await response.json();
+        console.error('Verify error response:', errData);
+        throw new Error(errData.error || 'Token không hợp lệ');
       }
 
       const data = await response.json();
+      console.log('✅ Verify thành công:', data.user);
       this.applySession(data.user);
       this.initAvatar();
 
@@ -46,9 +54,10 @@ const Dashboard = {
       this.startSessionCheck();
 
     } catch (error) {
-      console.error('Verify error:', error);
+      console.error('❌ Verify error:', error);
       localStorage.removeItem('uiticket_token');
       localStorage.removeItem('uiticket_user');
+      alert(`Lỗi: ${error.message}\n\nVui lòng đăng nhập lại.`);
       window.location.href = "index.html";
     }
   },
@@ -95,25 +104,27 @@ const Dashboard = {
     const nameEl = document.getElementById("homeName");
     const roleEl = document.getElementById("homeRole");
     const chipEl = document.getElementById("roleChip");
-    const systemTile = document.getElementById("systemTile");
+    const infoTile = document.getElementById("infoTile");
 
     nameEl.textContent = user.full_name || user.username;
     roleEl.textContent = user.role;
 
     chipEl.style.background = (user.role === "Admin") ? "var(--chip-admin)" : "var(--primary)";
 
-    if (user.role !== "Admin") {
-      systemTile.classList.add("disabled");
-      systemTile.title = "Không đủ quyền";
-    } else {
-      systemTile.classList.remove("disabled");
-      systemTile.title = "";
+    if (infoTile) {
+      if (user.role !== "Admin") {
+        infoTile.classList.add("disabled");
+        infoTile.title = "Không đủ quyền";
+      } else {
+        infoTile.classList.remove("disabled");
+        infoTile.title = "";
+      }
     }
 
     localStorage.setItem('uiticket_user', JSON.stringify(user));
 
     const grid = document.getElementById("dashboardGrid") || document.querySelector(".grid");
-    const userMgmtTile = document.getElementById("userMgmtTile");
+    const userMgmtTile = document.getElementById("userMgmtBtn");
 
     if (grid) grid.classList.toggle("admin-grid", isAdmin(user));
     if (userMgmtTile) userMgmtTile.style.display = isAdmin(user) ? "" : "none";
@@ -129,18 +140,28 @@ const Dashboard = {
     img.onload = () => { img.style.display = "block"; fallback.style.display = "none"; };
     img.onerror = () => { img.style.display = "none"; fallback.style.display = "block"; };
     
-    img.src = user.avatar_url || "avatar.png";
+    if (user.avatar_url) {
+      img.src = user.avatar_url;
+    } else {
+      // Nếu chưa có avatar, hiển thị fallback icon
+      img.style.display = "none";
+      fallback.style.display = "block";
+    }
   },
 
   tileClick(key) {
 
     const user = JSON.parse(localStorage.getItem('uiticket_user') || '{"role":"User"}');
 
-    if (key === "system" && user.role !== "Admin") {
+    if (key === "info" && user.role !== "Admin") {
       UI.toast("❌ Không đủ quyền", "warn");
       return;
     }
 
+    if (key === "info") {
+      this.showInfoModal();
+      return;
+    }
 
   // ✅ thêm đoạn này
   if (key === "schedule") {
@@ -156,7 +177,7 @@ const Dashboard = {
     schedule: "Nhận lịch Chuyến bay (demo)",
     report: "Báo cáo / Thống kê (demo)",
     sell: "Bán vé (demo)",
-    system: "Hệ thống / Cài đặt (Admin) (demo)"
+    info: "Cập nhật thông tin (Admin) (demo)"
   };
   UI.toast(map[key] || "Tính năng (demo)", "success");
 },
@@ -1023,6 +1044,367 @@ function escapeHtml(s) {
     "'":"&#039;"
   }[m]));
 }
+
+// ============================================
+// INFO MODAL FUNCTIONS (SYSTEM INFO)
+// ============================================
+Object.assign(Dashboard, {
+  currentInfoTab: 'airport',
+
+  showInfoModal() {
+    const modal = document.getElementById("infoModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      this.loadAirports();
+      this.loadClasses();
+      this.loadParameters();
+    }
+  },
+
+  closeInfoModal() {
+    const modal = document.getElementById("infoModal");
+    if (modal) modal.classList.add("hidden");
+  },
+
+  switchInfoTab(tab) {
+    this.currentInfoTab = tab;
+    
+    document.querySelectorAll('.info-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.info-tab-content').forEach(c => c.classList.remove('active'));
+    
+    document.querySelector(`.info-tab[data-tab="${tab}"]`)?.classList.add('active');
+    document.getElementById(tab + 'Tab')?.classList.add('active');
+  },
+
+  // ✅ AIRPORT FUNCTIONS
+  async loadAirports() {
+    const token = localStorage.getItem("uiticket_token");
+    const list = document.getElementById("airportList");
+    if (!list) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/airports`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (!data.airports) {
+        list.innerHTML = '<div class="info-empty">Chưa có sân bay nào</div>';
+        return;
+      }
+
+      list.innerHTML = data.airports.map(a => `
+        <div class="info-item">
+          <div class="info-item-main">
+            <div class="info-item-code">${escapeHtml(a.ma_san_bay)}</div>
+            <div class="info-item-details">
+              <div class="info-item-name">${escapeHtml(a.ten_san_bay)}</div>
+              <div class="info-item-subtext">${escapeHtml(a.thanh_pho || '')} - ${escapeHtml(a.quoc_gia || '')}</div>
+            </div>
+          </div>
+          <button class="info-del-btn" onclick="Dashboard.deleteAirport('${escapeHtml(a.ma_san_bay)}')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Load airports error:', error);
+      UI.toast('❌ Lỗi tải sân bay', 'warn');
+    }
+  },
+
+  async addAirport() {
+    const token = localStorage.getItem("uiticket_token");
+    const code = document.getElementById("airportCode")?.value?.trim().toUpperCase();
+    const name = document.getElementById("airportName")?.value?.trim();
+    const city = document.getElementById("airportCity")?.value?.trim();
+    const country = document.getElementById("airportCountry")?.value?.trim();
+
+    if (!code || !name) {
+      UI.toast("❌ Vui lòng nhập mã & tên sân bay", "warn");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/airports`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code, name, city, country })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        UI.toast(`❌ ${data.error || 'Lỗi thêm sân bay'}`, 'warn');
+        return;
+      }
+
+      UI.toast("✅ Thêm sân bay thành công", "success");
+      document.getElementById("airportCode").value = '';
+      document.getElementById("airportName").value = '';
+      document.getElementById("airportCity").value = '';
+      document.getElementById("airportCountry").value = '';
+      this.loadAirports();
+    } catch (error) {
+      console.error('Add airport error:', error);
+      UI.toast('❌ Lỗi thêm sân bay', 'warn');
+    }
+  },
+
+  async deleteAirport(code) {
+    const confirmed = await UI.confirm({
+      title: "Xóa sân bay",
+      message: `Bạn có chắc muốn xóa sân bay ${escapeHtml(code)} này?`,
+      confirmText: "Xóa",
+      cancelText: "Hủy",
+      type: "danger",
+      icon: "fa-trash"
+    });
+
+    if (!confirmed) return;
+
+    const token = localStorage.getItem("uiticket_token");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/airports/${code}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        UI.toast(`❌ ${data.error || 'Lỗi xóa sân bay'}`, 'warn');
+        return;
+      }
+
+      UI.toast("✅ Đã xóa sân bay", "success");
+      this.loadAirports();
+    } catch (error) {
+      console.error('Delete airport error:', error);
+      UI.toast('❌ Lỗi xóa sân bay', 'warn');
+    }
+  },
+
+  // ✅ CLASS FUNCTIONS
+  async loadClasses() {
+    const token = localStorage.getItem("uiticket_token");
+    const list = document.getElementById("classList");
+    if (!list) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/classes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (!data.classes) {
+        list.innerHTML = '<div class="info-empty">Chưa có hạng vé nào</div>';
+        return;
+      }
+
+      list.innerHTML = data.classes.map(c => `
+        <div class="info-item">
+          <div class="info-item-main">
+            <div class="info-item-code">${escapeHtml(c.ma_hang_ve)}</div>
+            <div class="info-item-details">
+              <div class="info-item-name">${escapeHtml(c.ten_hang_ve)}</div>
+              <div class="info-item-subtext">Tỷ lệ: ${c.ti_le_gia}x</div>
+            </div>
+          </div>
+          <button class="info-del-btn" onclick="Dashboard.deleteClass('${escapeHtml(c.ma_hang_ve)}')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Load classes error:', error);
+      UI.toast('❌ Lỗi tải hạng vé', 'warn');
+    }
+  },
+
+  async addClass() {
+    const token = localStorage.getItem("uiticket_token");
+    const code = document.getElementById("className")?.value?.trim().toUpperCase();
+    const name = document.getElementById("classDisplayName")?.value?.trim();
+    const ratio = parseFloat(document.getElementById("classPriceRatio")?.value);
+
+    if (!code || !name || isNaN(ratio)) {
+      UI.toast("❌ Vui lòng nhập đầy đủ thông tin", "warn");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/classes`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code, name, ratio })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        UI.toast(`❌ ${data.error || 'Lỗi thêm hạng vé'}`, 'warn');
+        return;
+      }
+
+      UI.toast("✅ Thêm hạng vé thành công", "success");
+      document.getElementById("className").value = '';
+      document.getElementById("classDisplayName").value = '';
+      document.getElementById("classPriceRatio").value = '';
+      this.loadClasses();
+    } catch (error) {
+      console.error('Add class error:', error);
+      UI.toast('❌ Lỗi thêm hạng vé', 'warn');
+    }
+  },
+
+  async deleteClass(code) {
+    const confirmed = await UI.confirm({
+      title: "Xóa hạng vé",
+      message: `Bạn có chắc muốn xóa hạng vé ${escapeHtml(code)} này?`,
+      confirmText: "Xóa",
+      cancelText: "Hủy",
+      type: "danger",
+      icon: "fa-trash"
+    });
+
+    if (!confirmed) return;
+
+    const token = localStorage.getItem("uiticket_token");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/classes/${code}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        UI.toast(`❌ ${data.error || 'Lỗi xóa hạng vé'}`, 'warn');
+        return;
+      }
+
+      UI.toast("✅ Đã xóa hạng vé", "success");
+      this.loadClasses();
+    } catch (error) {
+      console.error('Delete class error:', error);
+      UI.toast('❌ Lỗi xóa hạng vé', 'warn');
+    }
+  },
+
+  // ✅ PARAMETER FUNCTIONS
+  async loadParameters() {
+    const token = localStorage.getItem("uiticket_token");
+    const list = document.getElementById("parameterList");
+    if (!list) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/parameters`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (!data.parameters) {
+        list.innerHTML = '<div class="info-empty">Chưa có tham số nào</div>';
+        return;
+      }
+
+      list.innerHTML = data.parameters.map(p => `
+        <div class="info-item">
+          <div class="info-item-main">
+            <div class="info-item-code">${escapeHtml(p.ten_tham_so)}</div>
+            <div class="info-item-details">
+              <div class="info-item-name">${escapeHtml(p.gia_tri)}</div>
+              <div class="info-item-subtext">${escapeHtml(p.mo_ta || '(không có mô tả)')}</div>
+            </div>
+          </div>
+          <button class="info-del-btn" onclick="Dashboard.deleteParameter('${escapeHtml(p.ten_tham_so)}')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Load parameters error:', error);
+      UI.toast('❌ Lỗi tải tham số', 'warn');
+    }
+  },
+
+  async addParameter() {
+    const token = localStorage.getItem("uiticket_token");
+    const name = document.getElementById("paramName")?.value?.trim();
+    const value = document.getElementById("paramValue")?.value?.trim();
+    const desc = document.getElementById("paramDesc")?.value?.trim();
+
+    if (!name || !value) {
+      UI.toast("❌ Vui lòng nhập tên & giá trị tham số", "warn");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/parameters`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, value, desc })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        UI.toast(`❌ ${data.error || 'Lỗi thêm tham số'}`, 'warn');
+        return;
+      }
+
+      UI.toast("✅ Thêm tham số thành công", "success");
+      document.getElementById("paramName").value = '';
+      document.getElementById("paramValue").value = '';
+      document.getElementById("paramDesc").value = '';
+      this.loadParameters();
+    } catch (error) {
+      console.error('Add parameter error:', error);
+      UI.toast('❌ Lỗi thêm tham số', 'warn');
+    }
+  },
+
+  async deleteParameter(name) {
+    const confirmed = await UI.confirm({
+      title: "Xóa tham số",
+      message: `Bạn có chắc muốn xóa tham số ${escapeHtml(name)} này?`,
+      confirmText: "Xóa",
+      cancelText: "Hủy",
+      type: "danger",
+      icon: "fa-trash"
+    });
+
+    if (!confirmed) return;
+
+    const token = localStorage.getItem("uiticket_token");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/parameters/${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        UI.toast(`❌ ${data.error || 'Lỗi xóa tham số'}`, 'warn');
+        return;
+      }
+
+      UI.toast("✅ Đã xóa tham số", "success");
+      this.loadParameters();
+    } catch (error) {
+      console.error('Delete parameter error:', error);
+      UI.toast('❌ Lỗi xóa tham số', 'warn');
+    }
+  }
+});
 
 window.addEventListener('beforeunload', () => {
   Dashboard.stopAllIntervals();
