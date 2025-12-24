@@ -1,5 +1,4 @@
 const API_BASE_URL = 'http://localhost:3000/api';
-
 const ReceiveSchedule = {
   airports: [],
   hangVe: [],
@@ -47,7 +46,7 @@ const ReceiveSchedule = {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const airportsData = await airportsRes.json();
-      this.airports = airportsData.airports;
+      this.airports = airportsData.items;
 
       const hangVeRes = await fetch(`${API_BASE_URL}/hang-ve`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -277,8 +276,9 @@ const ReceiveSchedule = {
     });
 
     // ✅ 4. CHUẨN BỊ MẢNG HẠNG VÉ
+    const mapHangVe = (ui) => ui === 'Business' ? 'BUS' : ui === 'Eco' ? 'ECO' : ui;
     const hang_ve = Object.keys(this.seatQuantities).map(ma_hang_ve => ({
-      ma_hang_ve,
+      ma_hang_ve: mapHangVe(ma_hang_ve),
       so_luong_ghe: this.seatQuantities[ma_hang_ve]
     }));
 

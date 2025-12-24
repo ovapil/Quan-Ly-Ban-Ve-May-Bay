@@ -1036,6 +1036,291 @@ app.post("/api/user/change-avatar", verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Lỗi server', details: error.message });
   }
 });
+// ============================================
+// FLIGHTS + BOOKINGS API (FINAL - FIX TYPE MISMATCH)
+// DÁN KHỐI NÀY NGAY TRƯỚC "START SERVER"
+// ============================================
+
+// ====== TÊN BẢNG/CỘT THEO DB CỦA BẠN ======
+const CB_TABLE = "chuyen_bay";
+const CB_PK = "ma_chuyen_bay";
+const CB_FROM = "san_bay_di";
+const CB_TO = "san_bay_den";
+const CB_DEPART = "ngay_gio_bay";
+const CB_DURATION = "thoi_gian_bay";
+const CB_BASE_PRICE = "gia_ve";
+
+const CBHV_TABLE = "chuyen_bay_hang_ve";
+const CBHV_CB = "ma_chuyen_bay";
+const CBHV_HV = "ma_hang_ve";
+
+// ⚠️ Nếu bạn chạy mà báo "column cbhv.tong_ghe does not exist" thì đổi tên cột ghế ở đây
+const CBHV_SEATS = "so_luong_ghe";
+
+// QĐ2: hạng 1 = 105%, hạng 2 = base
+const CLASS1_MULT = 1.05;
+
+const toInt = (x) => Math.round(Number(x || 0));
+const calcPrice = (base, ticketClass) => {
+  const b = toInt(base);
+  return String(ticketClass) === "1" ? toInt(b * CLASS1_MULT) : b;
+};
+
+// ===================================================
+// GET /api/flights?from=...&to=...&date=YYYY-MM-DD
+// ===================================================
+app.get("/api/flights", verifyToken, async (req, res) => {
+  try {
+    const from = (req.query.from || "").trim();
+    const to = (req.query.to || "").trim();
+    const date = (req.query.date || "").trim();
+
+    const q = `
+      WITH sold AS (
+        SELECT ma_chuyen_bay, ma_hang_ve, COUNT(*)::int AS sold
+        FROM giao_dich_ve
+        WHERE trang_thai='active' AND loai='ban_ve'
+        GROUP BY ma_chuyen_bay, ma_hang_ve
+      )
+      SELECT
+        cb.${CB_PK} AS id,
+        cb.${CB_PK} AS flight_code,
+        cb.${CB_FROM} AS from_city,
+        cb.${CB_TO} AS to_city,
+        cb.${CB_DEPART} AS depart_at,
+        cb.${CB_DURATION} AS duration_minutes,
+        cb.${CB_BASE_PRICE} AS base_price,
+
+        GREATEST(
+          COALESCE(MAX(CASE WHEN cbhv.${CBHV_HV}::text='1' THEN cbhv.${CBHV_SEATS} END),0)
+          - COALESCE(MAX(CASE WHEN cbhv.${CBHV_HV}::text='1' THEN s.sold END),0),
+          0
+        ) AS seats1_avail,
+
+        GREATEST(
+          COALESCE(MAX(CASE WHEN cbhv.${CBHV_HV}::text='2' THEN cbhv.${CBHV_SEATS} END),0)
+          - COALESCE(MAX(CASE WHEN cbhv.${CBHV_HV}::text='2' THEN s.sold END),0),
+          0
+        ) AS seats2_avail
+
+      FROM ${CB_TABLE} cb
+      JOIN ${CBHV_TABLE} cbhv
+        ON cbhv.${CBHV_CB}::text = cb.${CB_PK}::text
+      LEFT JOIN sold s
+        ON s.ma_chuyen_bay::text = cb.${CB_PK}::text
+       AND s.ma_hang_ve::text = cbhv.${CBHV_HV}::text
+
+      WHERE ($1 = '' OR cb.${CB_FROM} = $1)
+        AND ($2 = '' OR cb.${CB_TO} = $2)
+        AND (NULLIF($3,'') IS NULL OR cb.${CB_DEPART}::date = NULLIF($3,'')::date)
+
+      GROUP BY cb.${CB_PK}, cb.${CB_FROM}, cb.${CB_TO}, cb.${CB_DEPART}, cb.${CB_DURATION}, cb.${CB_BASE_PRICE}
+      ORDER BY cb.${CB_DEPART} ASC
+      LIMIT 200;
+    `;
+
+    const r = await pool.query(q, [from, to, date]);
+    res.json({ items: r.rows });
+  } catch (e) {
+    console.error("GET /api/flights error:", e);
+    res.status(500).json({ error: e.message || "Lỗi server" });
+  }
+});
+
+// ===================================================
+// GET /api/bookings?status=active|cancelled&q=...
+// ===================================================
+app.get("/api/bookings", verifyToken, async (req, res) => {
+  try {
+    const status = (req.query.status || "active").trim();
+   const qtxt = (req.query.keyword || req.query.q || "").trim();
+
+
+    const q = `
+      SELECT
+        id,
+        ma_phieu AS booking_code,
+        ma_chuyen_bay AS flight_code,
+        hanh_khach AS passenger_name,
+        cmnd,
+        dien_thoai AS phone,
+        ma_hang_ve AS ticket_class,
+        gia_tien AS price,
+        trang_thai AS status,
+        created_at
+      FROM giao_dich_ve
+      WHERE trang_thai = $1
+        AND (
+          $2 = '' OR
+          ma_phieu ILIKE '%'||$2||'%' OR
+          ma_chuyen_bay ILIKE '%'||$2||'%' OR
+          hanh_khach ILIKE '%'||$2||'%' OR
+          cmnd ILIKE '%'||$2||'%' OR
+          dien_thoai ILIKE '%'||$2||'%'
+        )
+      ORDER BY created_at DESC
+      LIMIT 200;
+    `;
+
+    const r = await pool.query(q, [status, qtxt]);
+    res.json({ items: r.rows });
+  } catch (e) {
+    console.error("GET /api/bookings error:", e);
+    res.status(500).json({ error: e.message || "Lỗi server" });
+  }
+});
+
+// ===================================================
+// POST /api/bookings
+// body: { flightId, passengerName, cccd, phone, ticketClass }
+// ===================================================
+app.post("/api/bookings", verifyToken, async (req, res) => {
+  const { flightId, passengerName, cccd, phone, ticketClass } = req.body || {};
+  const maChuyenBay = String(flightId || "").trim();
+  const clsText = String(ticketClass || "").trim(); // '1' hoặc '2'
+
+  if (!maChuyenBay) return res.status(400).json({ error: "Thiếu flightId (mã chuyến bay)" });
+  if (!passengerName || !String(passengerName).trim()) return res.status(400).json({ error: "Thiếu tên hành khách" });
+  if (!cccd || !String(cccd).trim()) return res.status(400).json({ error: "Thiếu CMND/CCCD" });
+  if (!phone || !String(phone).trim()) return res.status(400).json({ error: "Thiếu số điện thoại" });
+  if (!["1", "2"].includes(clsText)) return res.status(400).json({ error: "Hạng vé chỉ được 1 hoặc 2" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Lấy base price từ chuyen_bay
+    const fr = await client.query(
+      `SELECT ${CB_BASE_PRICE} AS base
+       FROM ${CB_TABLE}
+       WHERE ${CB_PK}::text = $1::text`,
+      [maChuyenBay]
+    );
+    if (!fr.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Không tìm thấy chuyến bay" });
+    }
+    const base = toInt(fr.rows[0].base);
+    if (base <= 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Giá vé (gia_ve) chưa hợp lệ" });
+    }
+    const price = calcPrice(base, clsText);
+
+    // Lock ghế theo (chuyến bay, hạng vé)
+    const seatRow = await client.query(
+      `SELECT ${CBHV_SEATS} AS seats
+       FROM ${CBHV_TABLE}
+       WHERE ${CBHV_CB}::text=$1::text
+         AND ${CBHV_HV}::text=$2::text
+       FOR UPDATE`,
+      [maChuyenBay, clsText]
+    );
+
+    if (!seatRow.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Không tìm thấy cấu hình hạng vé cho chuyến bay (chuyen_bay_hang_ve)" });
+    }
+
+    const totalSeats = Number(seatRow.rows[0].seats || 0);
+    if (totalSeats <= 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: `Số ghế (${CBHV_SEATS}) chưa hợp lệ` });
+    }
+
+    // Đếm số vé đã bán
+    const sold = await client.query(
+      `SELECT COUNT(*)::int AS c
+       FROM giao_dich_ve
+       WHERE ma_chuyen_bay::text=$1::text
+         AND ma_hang_ve::text=$2::text
+         AND trang_thai='active' AND loai='ban_ve'`,
+      [maChuyenBay, clsText]
+    );
+    const soldCount = sold.rows[0]?.c || 0;
+
+    if (soldCount >= totalSeats) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Hạng vé này đã hết chỗ" });
+    }
+
+    // Insert phiếu bán vé
+    const ins = await client.query(
+      `INSERT INTO giao_dich_ve(
+          ma_chuyen_bay, ma_hang_ve, hanh_khach, cmnd, dien_thoai,
+          gia_tien, loai, trang_thai, created_by
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,'ban_ve','active',$7)
+       RETURNING id`,
+      [
+        maChuyenBay,
+        clsText, // dùng text để DB tự cast nếu cột là int
+        String(passengerName).trim(),
+        String(cccd).trim(),
+        String(phone).trim(),
+        price,
+        req.user.id,
+      ]
+    );
+
+    const newId = ins.rows[0].id;
+
+    // Sinh mã phiếu PD0001...
+    const upd = await client.query(
+      `UPDATE giao_dich_ve
+       SET ma_phieu='PD'||LPAD($1::text,4,'0')
+       WHERE id=$1
+       RETURNING ma_phieu`,
+      [newId]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      message: "Tạo phiếu thành công",
+      booking: {
+        id: newId,
+        booking_code: upd.rows[0].ma_phieu,
+        flight_code: maChuyenBay,
+        passenger_name: passengerName,
+        cccd,
+        phone,
+        ticket_class: clsText,
+        price,
+      },
+    });
+  } catch (e) {
+    await client.query("ROLLBACK");
+    console.error("POST /api/bookings error:", e);
+    res.status(500).json({ error: e.message || "Lỗi server" });
+  } finally {
+    client.release();
+  }
+});
+
+// ===================================================
+// POST /api/bookings/:id/cancel
+// ===================================================
+app.post("/api/bookings/:id/cancel", verifyToken, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Id không hợp lệ" });
+
+    const r = await pool.query(
+      `UPDATE giao_dich_ve
+       SET trang_thai='cancelled'
+       WHERE id=$1 AND trang_thai='active'
+       RETURNING id`,
+      [id]
+    );
+
+    if (!r.rows.length) return res.status(404).json({ error: "Không tìm thấy phiếu hoặc đã huỷ" });
+    res.json({ message: "Đã huỷ phiếu" });
+  } catch (e) {
+    console.error("POST /api/bookings/:id/cancel error:", e);
+    res.status(500).json({ error: e.message || "Lỗi server" });
+  }
+});
 
 // ============================================
 // ADMIN: AIRPORT MANAGEMENT

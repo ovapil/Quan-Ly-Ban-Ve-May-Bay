@@ -157,17 +157,21 @@ const Dashboard = {
       UI.toast("❌ Không đủ quyền", "warn");
       return;
     }
+if (key === "schedule") {
+  window.location.href = "schedule.html?preview=1";
+  return;
+}
+if (key === "booking") {
+  window.location.href = "booking.html?preview=1";
+  return;
+}
 
     if (key === "info") {
       this.showInfoModal();
       return;
     }
 
-  // ✅ thêm đoạn này
-  if (key === "schedule") {
-    window.location.href = "schedule.html";
-    return;
-  }
+  
 
   if (key === "sell"){
     window.location.href = "sell.html";
