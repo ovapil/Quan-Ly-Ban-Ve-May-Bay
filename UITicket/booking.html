@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Quản lý đặt vé</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/booking.css" />
+</head>
+
+<body class="app-mode">
+  <div id="toast">Thông báo</div>
+
+  <!-- HEADER y hệt dashboard/schedule -->
+  <header class="app-header">
+    <div class="bar">
+      <div class="brand">
+        <img class="brand-logo-img" src="assets/images/logo.png" alt="UITicket Logo" />
+        <div class="name">
+          <div class="title">UITicket</div>
+          <div class="slogan">Buy&Fly. Catch your sky!</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab active" onclick="window.location.href='dashboard.html'">Trang chủ</button>
+        <button class="tab" onclick="window.location.href='account.html'">Tài khoản</button>
+        <button class="tab" onclick="window.location.href='settings.html'">Cài đặt</button>
+      </nav>
+
+      <div class="actions">
+        <button class="icon-btn" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge" id="notifBadge">1</span>
+        </button>
+        <button class="icon-btn" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page booking-page">
+    <h1 class="booking-title">QUẢN LÝ ĐẶT VÉ</h1>
+
+    <section class="booking-grid">
+      <!-- LEFT -->
+      <div class="left-col">
+        <!-- TẠO PHIẾU ĐẶT -->
+        <div class="panel">
+          <div class="panel-head">Tạo phiếu đặt</div>
+
+          <div class="panel-body">
+            <div class="create-layout">
+              <!-- Illustration (nếu bạn có ảnh clipboard thì thay vào đây) -->
+              <div class="create-illus">
+                <div class="illus-box">
+                  <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+              </div>
+
+              <!-- Search + table -->
+              <div class="create-main">
+                <div class="search-strip">
+                  <div class="field">
+                    <label>Sân bay đi</label>
+                    <select class="input" id="fromAirport">
+                      <option>Hồ Chí Minh City</option>
+                      <option>Đà Nẵng</option>
+                    </select>
+                  </div>
+
+                  <button class="swap-btn" type="button" title="Đổi chiều">
+                    <i class="fa-solid fa-right-left"></i>
+                  </button>
+
+                  <div class="field">
+                   <label>Sân bay đến</label>
+<select class="input" id="toAirport"></select>
+</div>
+
+<div class="field">
+  <label>&nbsp;</label>
+  <div class="date-and-btn">
+    <input class="input" id="flightDate" type="date" />
+    <button class="find-btn" id="btnFind" type="button">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      Tìm chuyến
+    </button>
+  </div>
+</div>
+</div>
+
+
+                <div class="flight-table" id="flightTable">
+                  <div class="flight-head">
+                    <div>Mã chuyến</div>
+                    <div>Tuyến</div>
+                    <div>Khởi hành</div>
+                    <div>Thời gian bay</div>
+                    <div>Ghế trống</div>
+                  </div>
+
+                  <!-- JS sẽ render rows -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected flight info (2 khối giống ảnh) -->
+            <div class="selected-wrap" id="selectedWrap">
+              <div class="sel-left">
+                <div class="sel-code" id="selCode">VN123</div>
+                <div class="sel-route" id="selRoute">Hồ Chí Minh City → Hà Nội</div>
+
+                <div class="sel-meta">
+                  <div id="selDepart">25/04/2024 08:30</div>
+                  <div id="selPriceInfo">Đơn giá: 1,000,000 Vđ</div>
+                </div>
+              </div>
+
+              <div class="sel-right">
+                <div class="sel-card">
+                  <div><b>Tuyến:</b> <span id="selRoute2">Hồ Chí Minh City – Hà Nội</span></div>
+                  <div><b>Ngày khởi hành</b> <span id="selDate2">25/04/2024</span></div>
+                  <div class="muted"><b>Hạn đặt vé:</b> <span id="selDeadline">trước ngày 25/04/2024</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DANH SÁCH PHIẾU ĐẶT -->
+        <div class="panel list-panel">
+          <div class="panel-body">
+            <div class="list-title">Danh sách phiếu đặt</div>
+
+            <div class="list-tools">
+	 <select class="input small" id="statusFilter">
+	  <option value="active">Đã thanh toán</option>
+	  <option value="expired">Hết hạn</option>
+	  <option value="cancelled">Đã hủy</option>
+	</select>
+<button class="btn-cancel" id="btnCancelBooking" type="button" style="display:none;">
+  <i class="fa-solid fa-ban"></i>
+  Hủy phiếu đã chọn
+</button>
+
+
+             <input
+  class="input grow"
+  id="bookingSearchInput"
+  type="text"
+  placeholder="CMND / Điện thoại / Tên hành khách / Mã chuyến"
+  autocomplete="off"
+/>
+
+
+              <button class="icon-mini" title="Xóa lọc">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+
+              <button class="btn-search" type="button">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Tìm kiếm
+              </button>
+
+              <button class="icon-mini" title="Làm mới">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+
+            <div class="table-card">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Mã phiếu</th>
+                    <th>Chuyến bay</th>
+                    <th>Hành khách</th>
+                    <th>CMND</th>
+                    <th>Điện thoại</th>
+                    <th>Hạng vé</th>
+                    <th style="text-align:right;">Giá tiền</th>
+                  </tr>
+                </thead>
+                <tbody id="bookingList"></tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <aside class="right-col">
+        <div class="panel">
+          <div class="panel-head">Phiếu Đặt Chỗ</div>
+
+          <div class="panel-body">
+            <div class="form-field">
+              <label>Hành khách <span class="req">*</span></label>
+              <input class="input" id="cusName" value="Nguyễn Văn B" />
+            </div>
+
+            <div class="form-field">
+              <label>CMND <span class="req">*</span></label>
+              <input class="input" id="cusCccd" value="123456789" />
+            </div>
+
+            <div class="form-field">
+              <label>Điện thoại <span class="req">*</span></label>
+              <input class="input" id="cusPhone" value="0901234567" />
+            </div>
+
+            <div class="form-field">
+              <label>Hạng vé <span class="req">*</span></label>
+              <select class="input" id="ticketClass">
+                <option value="1">Business</option>
+                <option value="2">Economy</option>
+              </select>
+
+              <div class="class-note">
+                <span id="seatNote">Business = 1 ghế trống</span>
+                <b id="classPrice">1,050,000 Vđ</b>
+              </div>
+            </div>
+
+            <div class="price-row">
+              <div class="price-label">Giá tiền <span class="req">*</span></div>
+              <div class="price-value" id="totalPrice">1,050,000 Vđ</div>
+            </div>
+
+            <button class="btn-primary" id="btnCreate" type="button">Tạo phiếu đặt</button>
+
+            <div class="form-links">
+              <a href="#" id="btnReset">Làm mới</a>
+              <span>|</span>
+              <a href="dashboard.html">Quay lại</a>
+            </div>
+
+  
+
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="js/booking.js"></script>
+</body>
+</html>
