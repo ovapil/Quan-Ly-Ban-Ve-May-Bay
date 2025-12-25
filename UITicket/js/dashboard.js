@@ -165,7 +165,10 @@ if (key === "booking") {
   window.location.href = "booking.html?preview=1";
   return;
 }
-
+if (key === "report") {
+  window.location.href = "report.html";
+  return;
+}
     if (key === "info") {
       this.showInfoModal();
       return;

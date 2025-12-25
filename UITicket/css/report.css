@@ -1,0 +1,289 @@
+/* ============================================
+   REPORT.CSS - Lập báo cáo (Theo tháng / Theo năm)
+   Mục tiêu: giống style UITicket (bo tròn, xanh - trắng),
+   nhưng tự chứa (không phụ thuộc booking/sell/schedule css).
+   ============================================ */
+
+.report-page{
+  padding-bottom: 40px;
+}
+
+.report-shell{
+  width: 100%;
+}
+
+.report-title{
+  text-align:center;
+  font-family: "Asap", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-weight: 800;
+  letter-spacing: 1px;
+  font-size: clamp(30px, 3.1vw, 46px);
+  color: #5D79E6;
+  margin: 6px 0 18px;
+}
+
+.report-card{
+  position: relative;
+  border-radius: 26px;
+  background: #EEF2FF;
+  box-shadow: var(--shadow);
+  padding: 22px;
+  overflow: hidden;
+}
+
+/* ===== Forms ===== */
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field.inline{ flex-direction:column; }
+.field.inline.grow{ flex: 1; }
+
+.field label{
+  font-weight: 700;
+  color: #3552B6;
+  font-size: 14px;
+}
+
+.input{
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 0 14px;
+  background: #fff;
+  color: #0B1B6F;
+  outline: none;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+
+select.input{ padding-right: 42px; }
+
+.input:focus{
+  border-color: rgba(46, 74, 168, .65);
+  box-shadow: 0 0 0 4px rgba(46, 74, 168, .12);
+}
+
+/* ===== Buttons ===== */
+.btns{
+  display:flex;
+  gap: 10px;
+  align-items:flex-end;
+  justify-content:flex-end;
+}
+
+.btn{
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid #dbe3f6;
+  background: #fff;
+  color: #0B1B6F;
+  padding: 0 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 10px;
+  align-items:center;
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.06);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.btn:hover{ transform: translateY(-1px); box-shadow: 0 12px 26px rgba(17,24,39,0.10); }
+.btn:active{ transform: translateY(0); }
+
+.btn.primary{
+  background: linear-gradient(135deg, #2E4AA8 0%, #27449C 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn.caret{
+  width: 44px;
+  padding: 0;
+  justify-content:center;
+}
+
+/* ===== Filter rows ===== */
+.report-filter-row{
+  display:grid;
+  grid-template-columns: 260px 220px 220px 1fr;
+  gap: 16px;
+  align-items:end;
+}
+
+@media (max-width: 1100px){
+  .report-filter-row{
+    grid-template-columns: 1fr;
+  }
+  .btns{ justify-content:flex-start; flex-wrap:wrap; }
+}
+
+.report-subfilter{
+  display:flex;
+  gap: 16px;
+  align-items:end;
+  margin-top: 14px;
+}
+
+@media (max-width: 1100px){
+  .report-subfilter{ flex-direction:column; align-items:stretch; }
+}
+
+/* ===== Split export menu ===== */
+.btn-split{ position: relative; display:flex; gap: 8px; }
+
+.split-menu{
+  position:absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(17,24,39,0.14);
+  min-width: 180px;
+  overflow: hidden;
+  z-index: 30;
+}
+
+.split-menu.hidden{ display:none; }
+
+.menu-item{
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  color: #0B1B6F;
+  text-align:left;
+}
+
+.menu-item:hover{ background: #F1F5FF; }
+
+/* ===== Summary cards ===== */
+.summary{
+  margin-top: 18px;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 1100px){
+  .summary{ grid-template-columns: 1fr; }
+}
+
+.sum-card{
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.75) 100%);
+  border: 1px solid rgba(219, 227, 246, 0.9);
+  border-radius: 18px;
+  padding: 16px;
+  display:flex;
+  gap: 12px;
+  align-items:center;
+}
+
+.sum-ico{
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  background: rgba(46, 74, 168, .12);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color: var(--primary);
+  flex: 0 0 44px;
+}
+
+.sum-k{ font-weight: 800; color: #3552B6; font-size: 13px; }
+.sum-v{ font-weight: 900; color: var(--text); font-size: 20px; margin-top: 4px; }
+
+/* ===== Table ===== */
+.table-wrap{
+  margin-top: 16px;
+  background: rgba(255,255,255,0.84);
+  border: 1px solid rgba(219, 227, 246, 0.9);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.table-head{
+  padding: 14px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table-title{
+  font-weight: 900;
+  color: #3552B6;
+}
+
+.table-search{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.table-search .input{
+  height: 40px;
+  width: min(320px, 56vw);
+}
+
+.table{
+  padding: 0;
+}
+
+.empty{
+  padding: 24px;
+  text-align:center;
+  color: #64748b;
+}
+
+.tbl{
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tbl th, .tbl td{
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 14px;
+}
+
+.tbl th{
+  text-align:left;
+  color: #3552B6;
+  font-weight: 900;
+  background: #F6F8FF;
+}
+
+.tbl td{ color: #0B1B6F; font-weight: 650; }
+
+.tbl tr:hover td{ background: rgba(46, 74, 168, 0.04); }
+
+.t-right{ text-align:right; }
+.t-center{ text-align:center; }
+
+.tbl tfoot td{
+  font-weight: 900;
+  background: #FBFCFF;
+}
+
+/* ===== Back button ===== */
+.back-fab{
+  position: absolute;
+  left: 18px;
+  bottom: 16px;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  background: rgba(46, 74, 168, 0.12);
+  color: var(--primary);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 12px 26px rgba(17,24,39,0.10);
+  transition: transform .15s ease, background .15s ease;
+}
+
+.back-fab:hover{ transform: translateY(-1px); background: rgba(46, 74, 168, 0.18); }
+.back-fab:active{ transform: translateY(0); }

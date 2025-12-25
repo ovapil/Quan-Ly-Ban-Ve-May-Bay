@@ -1420,8 +1420,8 @@ const statusSql = (() => {
   if (status === "cancelled")
     return `gdv.trang_thai = 'Đã hủy'`;
 
-  if (status === "expired")
-    return `gdv.trang_thai = 'Hết hạn'`;
+  if (status === "expired") return `gdv.trang_thai = 'Hết hạn'`;
+
 
   // active = Đã thanh toán (tab "Đã thanh toán" ở UI)
   return `gdv.trang_thai = 'Đã thanh toán'`;
@@ -1465,7 +1465,6 @@ const statusSql = (() => {
     res.status(500).json({ error: e.message || "Lỗi server" });
   }
 });
-
 
 // ============================================
 // ADMIN: AIRPORT MANAGEMENT

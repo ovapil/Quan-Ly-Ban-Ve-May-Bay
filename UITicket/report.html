@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Lập báo cáo</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/report.css" />
+</head>
+
+<body class="app-mode">
+  <div id="toast">Thông báo</div>
+
+  <!-- HEADER đồng bộ các trang khác -->
+  <header class="app-header">
+    <div class="bar">
+      <div class="brand">
+        <img class="brand-logo-img" src="assets/images/logo.png" alt="UITicket Logo" />
+        <div class="name">
+          <div class="title">UITicket</div>
+          <div class="slogan">Buy&Fly. Catch your sky!</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab active" id="tabHome">Trang chủ</button>
+        <button class="tab" id="tabAccount">Tài khoản</button>
+        <button class="tab" id="tabSettings">Cài đặt</button>
+      </nav>
+
+      <div class="actions">
+        <button class="icon-btn" aria-label="Notifications" id="btnNoti">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge" id="notifBadge">1</span>
+        </button>
+        <button class="icon-btn" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page report-page">
+    <section class="report-shell">
+      <h1 class="report-title">LẬP BÁO CÁO</h1>
+
+      <div class="report-card">
+        <!-- Bộ lọc chính -->
+        <div class="report-filter-row">
+          <div class="field">
+            <label>Loại báo cáo</label>
+            <select class="input" id="reportType">
+              <option value="month" selected>Báo cáo theo tháng</option>
+              <option value="year">Báo cáo theo năm</option>
+            </select>
+          </div>
+
+          <div class="field" id="yearWrap">
+            <label>Năm</label>
+            <input class="input" id="yearInput" type="number" min="2000" max="2100" placeholder="VD: 2024" />
+          </div>
+
+          <div class="field" id="monthWrap">
+            <label>Tháng</label>
+            <input class="input" id="monthInput" type="month" />
+          </div>
+
+          <div class="btns">
+            <button class="btn primary" id="btnGenerate">
+              <i class="fa-solid fa-chart-column"></i>
+              Báo cáo
+            </button>
+
+            <div class="btn-split">
+              <button class="btn" id="btnExport" title="Xuất báo cáo">
+                <i class="fa-solid fa-file-arrow-down"></i>
+                Xuất
+              </button>
+              <button class="btn caret" id="btnExportCaret" aria-label="Export menu">
+                <i class="fa-solid fa-caret-down"></i>
+              </button>
+              <div class="split-menu hidden" id="exportMenu">
+                <button type="button" class="menu-item" data-export="csv">Xuất CSV</button>
+                <button type="button" class="menu-item" data-export="print">In</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bộ lọc phụ -->
+        <div class="report-subfilter">
+          <div class="field inline">
+            <label>Trạng thái (tuỳ chọn)</label>
+            <select class="input" id="statusFilter">
+              <option value="paid" selected>Chỉ tính đã thanh toán</option>
+              <option value="all">Tất cả trạng thái</option>
+            </select>
+          </div>
+
+          <div class="field inline grow">
+            <label id="quickLabel">Tìm nhanh chuyến bay</label>
+            <input class="input" id="quickSearch" placeholder="VD: VN123" />
+          </div>
+
+          <div class="field inline">
+            <label>&nbsp;</label>
+            <button class="btn" id="btnReset" type="button">
+              <i class="fa-solid fa-rotate-right"></i>
+              Làm mới
+            </button>
+          </div>
+        </div>
+
+        <!-- Thẻ tóm tắt -->
+        <div class="summary">
+          <div class="sum-card">
+            <div class="sum-ico"><i class="fa-solid fa-sack-dollar"></i></div>
+            <div class="sum-meta">
+              <div class="sum-k">Tổng doanh thu</div>
+              <div class="sum-v" id="sumRevenue">—</div>
+            </div>
+          </div>
+
+          <div class="sum-card" id="sumMidCard">
+            <div class="sum-ico"><i class="fa-solid fa-ticket"></i></div>
+            <div class="sum-meta">
+              <div class="sum-k" id="sumMidLabel">Tổng số vé</div>
+              <div class="sum-v" id="sumMidValue">—</div>
+            </div>
+          </div>
+
+          <div class="sum-card" id="sumRightCard">
+            <div class="sum-ico"><i class="fa-solid fa-plane"></i></div>
+            <div class="sum-meta">
+              <div class="sum-k" id="sumRightLabel">Số chuyến bay</div>
+              <div class="sum-v" id="sumRightValue">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng kết quả -->
+        <div class="table-wrap">
+          <div class="table-head">
+            <div class="table-title" id="tableTitle">Báo cáo theo tháng</div>
+            <div class="table-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input class="input" id="tableSearch" placeholder="Lọc bảng..." />
+            </div>
+          </div>
+
+          <div class="table" id="reportTable">
+            <!-- JS render -->
+            <div class="empty" id="emptyState">
+              Chọn thời gian và bấm <b>Báo cáo</b> để xem dữ liệu.
+            </div>
+          </div>
+        </div>
+
+        <!-- Back button (góc trái dưới) -->
+        <button class="back-fab" id="btnBack" title="Quay lại">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/report.js"></script>
+</body>
+</html>
