@@ -41,15 +41,17 @@
           <i class="fa-regular fa-bell"></i>
           <span class="badge" id="notifBadge">1</span>
         </button>
-        <button class="icon-btn" aria-label="Menu">
-          <i class="fa-solid fa-bars"></i>
-        </button>
       </div>
     </div>
   </header>
 
   <main class="page sell-page">
-    <h1 class="sell-title">BÁN VÉ</h1>
+    <div class="page-header">
+      <h1 class="sell-title">BÁN VÉ</h1>
+      <button class="tool-btn back" id="btnBackTop" title="Quay lại">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+    </div>
 
     <section class="sell-grid">
       <!-- LEFT: Chọn chuyến bay -->
@@ -143,6 +145,54 @@
 
           </div>
         </div>
+
+        <!-- DANH SÁCH VÉ ĐÃ BÁN (BM2) -->
+        <div class="panel list-panel">
+          <div class="panel-body">
+            <div class="list-title">Danh sách vé đã bán</div>
+
+            <div class="list-tools">
+              <input
+                class="input grow"
+                id="ticketSearchInput"
+                type="text"
+                placeholder="Mã vé / Mã chuyến / CMND / SĐT / Tên hành khách"
+                autocomplete="off"
+              />
+
+              <button class="icon-mini" title="Xóa lọc" id="btnClearTicketFilter" type="button">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+
+              <button class="btn-search" type="button" id="btnSearchTicket">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Tìm kiếm
+              </button>
+
+              <button class="icon-mini" title="Làm mới" id="btnRefreshTicket" type="button">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+
+            <div class="table-card">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Mã vé</th>
+                    <th>Chuyến bay</th>
+                    <th>Hành khách</th>
+                    <th>CMND</th>
+                    <th>Điện thoại</th>
+                    <th>Hạng vé</th>
+                    <th style="text-align:right;">Giá tiền</th>
+                    <th>Thời gian bán</th>
+                  </tr>
+                </thead>
+                <tbody id="ticketList"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- RIGHT: Form Vé chuyến bay (BM2) -->
@@ -183,10 +233,6 @@
                   <span id="seatNote">Chưa chọn chuyến</span>
                   <b id="classPrice">—</b>
                 </div>
-
-                <div class="helper">
-                  Hạng 1 = 105% đơn giá • Hạng 2 = 100% đơn giá
-                </div>
               </div>
 
               <div class="price-row">
@@ -198,8 +244,6 @@
 
               <div class="form-links">
                 <a href="#" id="btnReset">Làm mới</a>
-                <span>|</span>
-                <a href="dashboard.html" id="btnBack">Quay lại</a>
               </div>
             </form>
 
@@ -209,6 +253,6 @@
     </section>
   </main>
 
-  <script src="js/sell.js"></script>
+  <script src="js/sell.js?v=20251225_1"></script>
 </body>
 </html>

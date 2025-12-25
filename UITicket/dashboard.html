@@ -46,15 +46,6 @@
         <button class="icon-btn" onclick="Dashboard.openUserManagement()" aria-label="User Management" id="userMgmtBtn">
           <i class="fa-solid fa-users-gear"></i>
         </button>
-        <button class="icon-btn dropdown-btn" aria-label="Menu" onclick="UI.toggleMenu()">
-          <i class="fa-solid fa-bars"></i>
-          <div class="dropdown-menu hidden" id="dropdownMenu">
-            <a href="#" onclick="Dashboard.tileClick('profile'); return false;">👤 Hồ sơ</a>
-            <a href="#" onclick="Dashboard.tileClick('settings'); return false;">⚙️ Cài đặt</a>
-            <hr style="margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;">
-            <a href="#" onclick="Dashboard.logout(); return false;" style="color: #ef4444;">🚪 Đăng xuất</a>
-          </div>
-        </button>
       </div>
     </div>
   </header>
@@ -77,12 +68,6 @@
             <div class="chip" id="roleChip">
               <i class="fa-solid fa-user-tie"></i>
               <span id="homeRole">Staff</span>
-            </div>
-
-            <!-- ✅ THÊM: Mini actions -->
-            <div class="mini-actions">
-              <button class="mini-btn" onclick="event.stopPropagation(); Dashboard.tileClick('profile')">Hồ sơ</button>
-              <button class="mini-btn danger" onclick="event.stopPropagation(); Dashboard.logout()">Đăng xuất</button>
             </div>
           </div>
         </div>

@@ -7,7 +7,45 @@
 }
 
 .booking-page{ padding-top: calc(92px + 10px); }
+/* Page header with back button */
+.page-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 18px;
+}
 
+.page-header .tool-btn {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Tool button */
+.tool-btn {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+
+.tool-btn.back {
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.12);
+  color: #111;
+}
+
+.tool-btn.back:hover {
+  box-shadow: 0 12px 28px rgba(17,24,39,0.18);
+}
+
+.tool-btn i { 
+  font-size: 18px; 
+}
 /* nền “mây” nhẹ giống ảnh */
 body.app-mode{
   background:
@@ -27,7 +65,7 @@ body.app-mode{
 
 .booking-grid{
   display:grid;
-  grid-template-columns: 1.85fr 1fr;
+  grid-template-columns: 1fr minmax(320px, 380px);
   gap: 22px;
   align-items:start;
 }
@@ -58,13 +96,13 @@ body.app-mode{
 
 .create-layout{
   display:grid;
-  grid-template-columns: 190px 1fr;
-  gap: 18px;
+  grid-template-columns: 1fr;
+  gap: 12px;
   align-items:start;
 }
 
 @media (max-width: 900px){
-  .create-layout{ grid-template-columns: 1fr; }
+  .create-layout{ gap: 10px; }
 }
 
 /* Illustration box */
@@ -164,7 +202,8 @@ body.app-mode{
 
 .flight-head, .flight-row{
   display:grid;
-  grid-template-columns: 110px 1.2fr 140px 160px 130px;
+  /* mã | tuyến | khởi hành | thời gian bay | ghế trống | action */
+  grid-template-columns: 110px 1.2fr 140px 160px 110px 130px;
   align-items:center;
   gap: 10px;
   padding: 12px 14px;
@@ -247,7 +286,7 @@ body.app-mode{
 /* list section */
 .list-panel .list-title{
   font-weight: 900;
-  font-size: 26px;
+  font-size: 22px;
   margin-bottom: 12px;
   color: var(--primary);
 }
@@ -314,6 +353,7 @@ body.app-mode{
   padding: 12px 14px;
   border-top: 1px solid #EEF2FF;
   font-weight: 700;
+  font-size: 14px;
   color:#111827;
 }
 
@@ -352,19 +392,24 @@ body.app-mode{
   box-shadow: 0 14px 26px rgba(46,74,168,0.25);
 }
 
-.btn-cancel {
-  background: #dc3545;
-  color: #fff;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
+.err{
+  margin-top: 6px;
   font-size: 12px;
+  font-weight: 800;
+  color:#dc2626;
 }
 
-.btn-cancel:hover {
-  background: #c82333;
+/* Không chừa khoảng trống khi không có lỗi */
+.err:empty{
+  display: none;
+  margin-top: 0;
 }
+
+.input.invalid{
+  box-shadow: inset 0 0 0 2px rgba(239,68,68,0.75);
+}
+
+
 
 .form-links{
   margin-top: 10px;
@@ -458,12 +503,14 @@ body.app-mode{
   background:#ef4444;
   color:#fff;
   border:none;
-  border-radius:12px;
-  padding:10px 14px;
+  height: 44px;
+  border-radius:14px;
+  padding: 0 18px;
   display:inline-flex;
   align-items:center;
-  gap:8px;
-  font-weight:700;
+  gap:10px;
+  font-weight:900;
   cursor:pointer;
+  white-space: nowrap;
 }
 .btn-cancel:hover{ filter: brightness(.95); }

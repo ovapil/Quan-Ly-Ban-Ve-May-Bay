@@ -7,7 +7,9 @@ const API_BASE_URL = "http://localhost:3000/api";
 
 
 function fillSelect(el, rows, placeholder) {
-  el.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+  // Giống bán vé: mặc định hiển thị "-- Tất cả --"
+  el.innerHTML = `<option value="" selected>-- Tất cả --</option>`;
+
   rows.forEach(x => {
     const opt = document.createElement("option");
     opt.value = x.ma_san_bay;
@@ -25,11 +27,6 @@ async function loadAirportsFromApi() {
 
   fillSelect(fromEl, rows, "Sân bay đi");
   fillSelect(toEl, rows, "Sân bay đến");
-
-  if (rows.length > 0) {
-    fromEl.value = rows[0].ma_san_bay;
-    toEl.value = (rows[1] ? rows[1].ma_san_bay : rows[0].ma_san_bay);
-  }
 }
 
 async function loadAirports() {
@@ -60,7 +57,17 @@ async function loadAirports() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadAirports);
+document.addEventListener("DOMContentLoaded", () => {
+  loadAirports();
+  
+  // Back button handler
+  const btnBack = document.getElementById("btnBackTop");
+  if (btnBack) {
+    btnBack.addEventListener("click", () => {
+      window.location.href = "dashboard.html";
+    });
+  }
+});
 
 const UI = {
   toast(message, type = "success") {
@@ -145,12 +152,13 @@ async function api(path, opts = {}) {
   const res = await fetch(`${API_BASE_URL}${path}`, { ...opts, headers });
   let data = {};
   try { data = await res.json(); } catch {}
-  if (res.status === 404) return { items: [] }; // Handle 404 as no data
+  const method = String(opts.method || "GET").toUpperCase();
+  if (res.status === 404 && method === "GET") return { items: [] }; // Only treat missing GET list as empty
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
 }
 
-const fmtMoney = (n) => Number(n || 0).toLocaleString("vi-VN") + " Vđ";
+const fmtMoney = (n) => Number(n || 0).toLocaleString("vi-VN") + " VNĐ";
 const pad2 = (x) => String(x).padStart(2, "0");
 function fmtDateOnly(d) {
   const dt = new Date(d);
@@ -178,6 +186,109 @@ let flights = [];
 let selectedBookingId = null;
 let selected = null;
 let lastBookingQuery = "";
+let attemptedCreateBooking = false;
+let createBookingInFlight = false;
+
+function isValidCMND(v) {
+  const s = String(v || "").trim();
+  return /^\d{9}(\d{3})?$/.test(s); // 9 hoặc 12 số
+}
+
+function isValidPhone(v) {
+  const s = String(v || "").trim();
+  return /^\d{10}$/.test(s); // đúng 10 số
+}
+
+function setFieldError(inputEl, errEl, message, show) {
+  if (!inputEl || !errEl) return;
+  errEl.textContent = show ? (message || "") : "";
+  inputEl.classList.toggle("invalid", !!(show && message));
+}
+
+function validateCreateBookingForm(showErrors) {
+  const btn = document.getElementById("btnCreate");
+  const nameEl = document.getElementById("cusName");
+  const cccdEl = document.getElementById("cusCccd");
+  const phoneEl = document.getElementById("cusPhone");
+
+  const errName = document.getElementById("errCusName");
+  const errCccd = document.getElementById("errCusCccd");
+  const errPhone = document.getElementById("errCusPhone");
+
+  const passengerName = String(nameEl?.value || "").trim();
+  const cccd = String(cccdEl?.value || "").trim();
+  const phone = String(phoneEl?.value || "").trim();
+
+  let ok = true;
+
+  if (!selected) ok = false;
+
+  if (!passengerName) {
+    ok = false;
+    setFieldError(nameEl, errName, "Vui lòng nhập họ tên", showErrors);
+  } else {
+    setFieldError(nameEl, errName, "", false);
+  }
+
+  if (!cccd) {
+    ok = false;
+    setFieldError(cccdEl, errCccd, "Vui lòng nhập CMND/CCCD", showErrors);
+  } else if (!isValidCMND(cccd)) {
+    ok = false;
+    setFieldError(cccdEl, errCccd, "CMND/CCCD phải 9 hoặc 12 chữ số", showErrors);
+  } else {
+    setFieldError(cccdEl, errCccd, "", false);
+  }
+
+  if (!phone) {
+    ok = false;
+    setFieldError(phoneEl, errPhone, "Vui lòng nhập số điện thoại", showErrors);
+  } else if (!isValidPhone(phone)) {
+    ok = false;
+    setFieldError(phoneEl, errPhone, "Số điện thoại phải đúng 10 chữ số", showErrors);
+  } else {
+    setFieldError(phoneEl, errPhone, "", false);
+  }
+
+  // kiểm tra còn ghế theo hạng vé
+  if (selected) {
+    const ticketClass = document.getElementById("ticketClass")?.value || "1";
+    const seatAvail = selected?.seats_by_class
+      ? Number(selected.seats_by_class[ticketClass] || 0)
+      : (ticketClass === "1" ? Number(selected.seats1_avail) : Number(selected.seats2_avail));
+    if (Number(seatAvail || 0) <= 0) ok = false;
+  }
+
+  // Giữ giao diện như cũ: không khóa nút theo điều kiện nhập.
+  // Chỉ khóa trong lúc đang gửi request để tránh double-click.
+  if (btn) btn.disabled = !!createBookingInFlight;
+  return ok;
+}
+let sellFromBookingInFlight = false;
+
+function clearSelectedUI() {
+  const wrap = document.getElementById("selectedWrap");
+  if (wrap) wrap.style.display = "none";
+
+  const setText = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+
+  setText("selCode", "—");
+  setText("selRoute", "—");
+  setText("selDepart", "—");
+  setText("selPriceInfo", "Đơn giá: —");
+  setText("selRoute2", "—");
+  setText("selDate2", "—");
+  setText("selDeadline", "—");
+
+  setText("seatNote", "Chưa chọn chuyến");
+  setText("classPrice", "—");
+  setText("totalPrice", "—");
+
+  validateCreateBookingForm(false);
+}
 
 function renderFlights() {
   const table = document.getElementById("flightTable");
@@ -194,6 +305,7 @@ function renderFlights() {
       <div>${f.from_city} → ${f.to_city}</div>
       <div>${fmtDateOnly(f.depart_at)}</div>
       <div>${durationText(f.duration_minutes)}</div>
+      <div class="t-center">${Number(f.seats_total_avail || 0)}</div>
       <div class="seat-cell"></div>
     `;
 
@@ -219,7 +331,13 @@ function renderFlights() {
 }
 
 function applySelected() {
-  if (!selected) return;
+  if (!selected) {
+    clearSelectedUI();
+    return;
+  }
+
+  const wrap = document.getElementById("selectedWrap");
+  if (wrap) wrap.style.display = "grid";
 
   const cls = document.getElementById("ticketClass")?.value || "1";
   const seat = selected.seats_by_class ? Number(selected.seats_by_class[cls] || 0) : (cls === "1" ? Number(selected.seats1_avail) : Number(selected.seats2_avail));
@@ -230,14 +348,27 @@ function applySelected() {
 
   document.getElementById("selRoute2").textContent = `${selected.from_city} – ${selected.to_city}`;
   document.getElementById("selDate2").textContent = fmtDateOnly(selected.depart_at);
-  document.getElementById("selDeadline").textContent = `trước ngày ${fmtDateOnly(selected.depart_at)}`;
+    // QĐ3: đặt vé chậm nhất 1 ngày trước giờ bay
+  let dlText = "—";
+  if (selected.depart_at) {
+    const dl = new Date(selected.depart_at);
+    if (!isNaN(dl.getTime())) {
+      dl.setDate(dl.getDate() - 1);
+      dlText = fmtDateOnly(dl.toISOString());
+    }
+  }
+  document.getElementById("selDeadline").textContent = `chậm nhất trước ngày ${dlText}`;
 
-  document.getElementById("seatNote").textContent = `Hạng ${cls} = ${seat} ghế trống`;
+  const clsLabel = document.getElementById("ticketClass")?.selectedOptions?.[0]?.textContent?.trim() || `Hạng ${cls}`;
+  document.getElementById("seatNote").textContent = `${clsLabel} có ${seat} ghế trống`;
 
   const p = priceByClass(selected.base_price, cls);
   document.getElementById("selPriceInfo").textContent = `Đơn giá: ${fmtMoney(selected.base_price)}`;
   document.getElementById("classPrice").textContent = fmtMoney(p);
   document.getElementById("totalPrice").textContent = fmtMoney(p);
+
+  // update create button state based on selection + seat availability
+  validateCreateBookingForm(attemptedCreateBooking);
 }
 
 async function loadFlightsFromApi(showToast = true, validateAirports = true) {
@@ -245,20 +376,22 @@ async function loadFlightsFromApi(showToast = true, validateAirports = true) {
   const to = document.getElementById("toAirport")?.value || "";
   const date = document.getElementById("flightDate")?.value || "";
 
-  if (validateAirports && (!from || !to)) {
-    throw new Error("Vui lòng chọn sân bay đi và đến");
-  }
+  // Không bắt buộc chọn sân bay/ ngày: để trống => coi như (Tất cả)
 
   const qs = new URLSearchParams();
   if (from) qs.set("from", from);
   if (to) qs.set("to", to);
   if (date) qs.set("date", date);
 
+  const prevCode = selected?.flight_code || "";
+
   const data = await api(`/flights?${qs.toString()}`);
   flights = data.items || [];
   console.log('Flights data:', flights); // Debug: Check seats_by_class
 
-  selected = flights[0] || null;
+  // Không tự chọn chuyến sau khi tìm; chỉ giữ lại nếu người dùng đã chọn trước đó
+  if (prevCode) selected = flights.find((f) => f.flight_code === prevCode) || null;
+  else selected = null;
 
   renderFlights();
   applySelected();
@@ -283,6 +416,7 @@ function renderBookings(items) {
     body.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#64748b;padding:14px;">Chưa có phiếu đặt</td></tr>`;
     selectedBookingId = null;
     updateCancelBtn();
+    updateSellBtn();
     return;
   }
 
@@ -318,19 +452,30 @@ function renderBookings(items) {
       body.querySelectorAll(".bk-row").forEach((x) => x.classList.remove("selected"));
       tr.classList.add("selected");
       updateCancelBtn();
+      updateSellBtn();
     });
   });
 
   updateCancelBtn();
+  updateSellBtn();
 }
 function updateCancelBtn() {
   const btn = document.getElementById("btnCancelBooking");
   if (!btn) return;
 
-  // chỉ cho hủy khi đang xem "Đã thanh toán" (value = active)
+  // chỉ cho hủy khi đang xem "Đặt chỗ" (value = active)
   const status = document.getElementById("statusFilter")?.value || "active";
   const ok = !!selectedBookingId && status === "active";
 
+  btn.style.display = ok ? "inline-flex" : "none";
+}
+
+function updateSellBtn() {
+  const btn = document.getElementById("btnSellBooking");
+  if (!btn) return;
+
+  const status = document.getElementById("statusFilter")?.value || "active";
+  const ok = !!selectedBookingId && status === "active";
   btn.style.display = ok ? "inline-flex" : "none";
 }
 
@@ -347,8 +492,20 @@ async function loadBookingsFromApi() {
 
 
 async function createBooking() {
+  attemptedCreateBooking = true;
+  if (!validateCreateBookingForm(true)) {
+    UI.toast("⚠️ Vui lòng kiểm tra thông tin trước khi tạo phiếu", "warn");
+    return;
+  }
+
+  if (createBookingInFlight) return;
+  createBookingInFlight = true;
+  validateCreateBookingForm(true);
+
   if (!selected) {
     UI.toast("⚠️ Chưa chọn chuyến bay", "warn");
+    createBookingInFlight = false;
+    validateCreateBookingForm(true);
     return;
   }
 
@@ -357,9 +514,12 @@ async function createBooking() {
   const phone = document.getElementById("cusPhone").value.trim();
   const ticketClass = document.getElementById("ticketClass").value;
 
-  if (!passengerName) return UI.toast("⚠️ Nhập tên hành khách", "warn");
-  if (!cccd) return UI.toast("⚠️ Nhập CMND/CCCD", "warn");
-  if (!phone) return UI.toast("⚠️ Nhập số điện thoại", "warn");
+  // (đã validate trước khi vào đây, giữ check nhẹ để an toàn)
+  if (!passengerName || !isValidCMND(cccd) || !isValidPhone(phone)) {
+    createBookingInFlight = false;
+    validateCreateBookingForm(true);
+    return;
+  }
 
   const seatAvail = selected?.seats_by_class
   ? Number(selected.seats_by_class[ticketClass] || 0)
@@ -368,7 +528,12 @@ async function createBooking() {
   console.log('Selected flight:', selected); // Debug
   console.log('Ticket class:', ticketClass, 'Seat avail:', seatAvail); // Debug
 
-  if (seatAvail <= 0) return UI.toast("Hạng vé này đã hết chỗ", "error");
+  if (seatAvail <= 0) {
+    UI.toast("Hạng vé này đã hết chỗ", "error");
+    createBookingInFlight = false;
+    validateCreateBookingForm(true);
+    return;
+  }
 
 
   const payload = {
@@ -379,29 +544,58 @@ async function createBooking() {
     ticketClass: String(ticketClass),
   };
 
-  const data = await api("/bookings", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
+  try {
+    const data = await api("/bookings", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
 
-  UI.toast(`✅ Đã tạo ${data.booking?.booking_code || "phiếu đặt"}`, "success");
+    UI.toast(`✅ Đã tạo ${data.booking?.booking_code || "phiếu đặt"}`, "success");
 
-  // refresh list + seats
-  await loadBookingsFromApi();
-  await loadFlightsFromApi(false);
+    // refresh list + seats
+    await loadBookingsFromApi();
+    await loadFlightsFromApi(false, false);
+  } finally {
+    createBookingInFlight = false;
+    validateCreateBookingForm(true);
+  }
 }
 
 function bindUI() {
-  // default date = hôm nay
+  // Mặc định: không chọn ngày => coi như tất cả các ngày
   const dateEl = document.getElementById("flightDate");
-  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0, 10);
+  if (dateEl) dateEl.value = "";
 
   document.getElementById("ticketClass")?.addEventListener("change", applySelected);
+
+  // validate inputs before enabling "Tạo phiếu đặt"
+  const nameEl = document.getElementById("cusName");
+  const cccdEl = document.getElementById("cusCccd");
+  const phoneEl = document.getElementById("cusPhone");
+
+  const revalidate = () => validateCreateBookingForm(attemptedCreateBooking);
+
+  nameEl?.addEventListener("input", revalidate);
+  nameEl?.addEventListener("blur", revalidate);
+
+  ["input", "blur"].forEach((evt) => {
+    cccdEl?.addEventListener(evt, (e) => {
+      if (evt === "input") e.target.value = String(e.target.value || "").replace(/\D/g, "").slice(0, 12);
+      revalidate();
+    });
+  });
+
+  ["input", "blur"].forEach((evt) => {
+    phoneEl?.addEventListener(evt, (e) => {
+      if (evt === "input") e.target.value = String(e.target.value || "").replace(/\D/g, "").slice(0, 10);
+      revalidate();
+    });
+  });
 
   document.getElementById("btnFind")?.addEventListener("click", async () => {
     try {
       UI.toast("🔎 Đang tìm chuyến...", "warn");
-      await loadFlightsFromApi(true);
+      await loadFlightsFromApi(true, false);
     } catch (e) {
       UI.toast(`❌ ${e.message}`, "warn");
     }
@@ -421,9 +615,14 @@ function bindUI() {
     document.getElementById("cusCccd").value = "";
     document.getElementById("cusPhone").value = "";
     document.getElementById("ticketClass").value = "1";
+    attemptedCreateBooking = false;
     applySelected();
+    validateCreateBookingForm(false);
     UI.toast("♻️ Đã làm mới", "success");
   });
+
+  // initial state
+  validateCreateBookingForm(false);
 document.getElementById("btnCancelBooking")?.addEventListener("click", async () => {
   if (!selectedBookingId) return;
 
@@ -452,6 +651,43 @@ document.getElementById("btnCancelBooking")?.addEventListener("click", async () 
   }
 });
 
+document.getElementById("btnSellBooking")?.addEventListener("click", async () => {
+  if (sellFromBookingInFlight) return;
+  if (!selectedBookingId) return;
+
+  const btn = document.getElementById("btnSellBooking");
+  sellFromBookingInFlight = true;
+  if (btn) btn.disabled = true;
+
+  const yes = await UI.confirm({
+    title: "Bán vé từ phiếu đặt",
+    message: `Bạn có chắc muốn <b>bán vé</b> từ phiếu <b>ID=${selectedBookingId}</b> không?`,
+    confirmText: "Bán vé",
+    cancelText: "Không",
+    type: "primary",
+    icon: "fa-ticket",
+  });
+  if (!yes) {
+    sellFromBookingInFlight = false;
+    if (btn) btn.disabled = false;
+    return;
+  }
+
+  try {
+    const data = await api(`/bookings/${selectedBookingId}/sell`, { method: "POST" });
+    const code = data.ticket?.ma_ve ? ` ${data.ticket.ma_ve}` : "";
+    UI.toast(`✅ Đã bán vé${code}`, "success");
+    selectedBookingId = null;
+    await loadBookingsFromApi();
+    await loadFlightsFromApi(false, false);
+  } catch (e) {
+    UI.toast(`❌ ${e.message}`, "warn");
+  } finally {
+    sellFromBookingInFlight = false;
+    if (btn) btn.disabled = false;
+  }
+});
+
   // swap from/to
   const swapBtn = document.querySelector(".swap-btn");
   if (swapBtn) {
@@ -469,11 +705,13 @@ document.getElementById("btnCancelBooking")?.addEventListener("click", async () 
   // booking list tools
   document.getElementById("statusFilter")?.addEventListener("change", () => {
     loadBookingsFromApi().catch(() => {});
+    updateCancelBtn();
+    updateSellBtn();
   });
 
-  const btnSearch = document.querySelector(".btn-search");
-if (btnSearch) {
-  btnSearch.addEventListener("click", async () => {
+  const btnSearch = document.getElementById("btnSearchBooking");
+  if (btnSearch) {
+    btnSearch.addEventListener("click", async () => {
     const q = String(document.getElementById("bookingSearchInput")?.value || "").trim();
     lastBookingQuery = q;
     try {
@@ -494,18 +732,27 @@ function renderMiniBooking(items) {
     return;
   }
 
-  // hạn chót đặt: tạm lấy theo ngày tạo phiếu + 1 ngày (bạn có rule khác thì đổi)
-  const deadline = b.created_at ? fmtDateOnly(b.created_at) : "—";
+  // Deadline đặt vé: chậm nhất 1 ngày trước giờ bay (QĐ3)
+let deadline = "—";
+if (b.depart_at) {
+  const d = new Date(b.depart_at);
+  if (!isNaN(d.getTime())) {
+    d.setDate(d.getDate() - 1);
+    deadline = fmtDateOnly(d.toISOString());
+  }
+}
+
 const statusText = (s) => {
+  if (s === "Đặt chỗ") return "Đặt chỗ";
   if (s === "Đã hủy") return "Đã hủy";
-  if (s === "Hết hạn") return "Hết hạn";
-  return "Đã thanh toán";
+  if (s === "Hết hạn") return "Bị hủy (ngày bay)";
+  return s || "—";
 };
 
 const statusPill = (s) => {
   if (s === "Đã hủy") return "pill blue";
   if (s === "Hết hạn") return "pill gray";
-  return "pill mint";
+  return "pill mint"; // Đặt chỗ
 };
 
 
@@ -520,7 +767,7 @@ const statusPill = (s) => {
 
 // Enter để tìm
 document.getElementById("bookingSearchInput")?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") document.querySelector(".btn-search")?.click();
+  if (e.key === "Enter") document.getElementById("btnSearchBooking")?.click();
 });
 
   const btnClear = document.querySelector('.icon-mini[title="Xóa lọc"]');
@@ -563,6 +810,9 @@ async function verifyOrRedirect() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   bindUI();
+
+  // Không hiển thị dữ liệu mẫu; chỉ hiện khi người dùng chọn chuyến
+  clearSelectedUI();
 
   
 

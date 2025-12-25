@@ -41,15 +41,17 @@
           <i class="fa-regular fa-bell"></i>
           <span class="badge" id="notifBadge">1</span>
         </button>
-        <button class="icon-btn" aria-label="Menu">
-          <i class="fa-solid fa-bars"></i>
-        </button>
       </div>
     </div>
   </header>
 
   <main class="page booking-page">
-    <h1 class="booking-title">QUẢN LÝ ĐẶT VÉ</h1>
+    <div class="page-header">
+      <h1 class="booking-title">QUẢN LÝ ĐẶT VÉ</h1>
+      <button class="tool-btn back" id="btnBackTop" title="Quay lại">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+    </div>
 
     <section class="booking-grid">
       <!-- LEFT -->
@@ -60,21 +62,13 @@
 
           <div class="panel-body">
             <div class="create-layout">
-              <!-- Illustration (nếu bạn có ảnh clipboard thì thay vào đây) -->
-              <div class="create-illus">
-                <div class="illus-box">
-                  <i class="fa-solid fa-clipboard-check"></i>
-                </div>
-              </div>
-
               <!-- Search + table -->
               <div class="create-main">
                 <div class="search-strip">
                   <div class="field">
                     <label>Sân bay đi</label>
                     <select class="input" id="fromAirport">
-                      <option>Hồ Chí Minh City</option>
-                      <option>Đà Nẵng</option>
+                      <option value="" selected>-- Tất cả --</option>
                     </select>
                   </div>
 
@@ -84,7 +78,9 @@
 
                   <div class="field">
                    <label>Sân bay đến</label>
-<select class="input" id="toAirport"></select>
+<select class="input" id="toAirport">
+  <option value="" selected>-- Tất cả --</option>
+</select>
 </div>
 
 <div class="field">
@@ -106,7 +102,8 @@
                     <div>Tuyến</div>
                     <div>Khởi hành</div>
                     <div>Thời gian bay</div>
-                    <div>Ghế trống</div>
+                    <div class="t-center">Ghế trống</div>
+                    <div></div>
                   </div>
 
                   <!-- JS sẽ render rows -->
@@ -114,23 +111,23 @@
               </div>
             </div>
 
-            <!-- Selected flight info (2 khối giống ảnh) -->
-            <div class="selected-wrap" id="selectedWrap">
+            <!-- Selected flight info -->
+            <div class="selected-wrap" id="selectedWrap" style="display:none;">
               <div class="sel-left">
-                <div class="sel-code" id="selCode">VN123</div>
-                <div class="sel-route" id="selRoute">Hồ Chí Minh City → Hà Nội</div>
+                <div class="sel-code" id="selCode">—</div>
+                <div class="sel-route" id="selRoute">—</div>
 
                 <div class="sel-meta">
-                  <div id="selDepart">25/04/2024 08:30</div>
-                  <div id="selPriceInfo">Đơn giá: 1,000,000 Vđ</div>
+                  <div id="selDepart">—</div>
+                  <div id="selPriceInfo">Đơn giá: —</div>
                 </div>
               </div>
 
               <div class="sel-right">
                 <div class="sel-card">
-                  <div><b>Tuyến:</b> <span id="selRoute2">Hồ Chí Minh City – Hà Nội</span></div>
-                  <div><b>Ngày khởi hành</b> <span id="selDate2">25/04/2024</span></div>
-                  <div class="muted"><b>Hạn đặt vé:</b> <span id="selDeadline">trước ngày 25/04/2024</span></div>
+                  <div><b>Tuyến:</b> <span id="selRoute2">—</span></div>
+                  <div><b>Ngày khởi hành</b> <span id="selDate2">—</span></div>
+                  <div class="muted"><b>Hạn đặt vé:</b> <span id="selDeadline">—</span></div>
                 </div>
               </div>
             </div>
@@ -144,13 +141,18 @@
 
             <div class="list-tools">
 	 <select class="input small" id="statusFilter">
-	  <option value="active">Đã thanh toán</option>
-	  <option value="expired">Hết hạn</option>
+	  <option value="active">Đặt chỗ</option>
+	  <option value="expired">Bị hủy (ngày bay)</option>
 	  <option value="cancelled">Đã hủy</option>
 	</select>
 <button class="btn-cancel" id="btnCancelBooking" type="button" style="display:none;">
   <i class="fa-solid fa-ban"></i>
   Hủy phiếu đã chọn
+</button>
+
+<button class="btn-search" id="btnSellBooking" type="button" style="display:none;">
+  <i class="fa-solid fa-ticket"></i>
+  Bán vé từ phiếu
 </button>
 
 
@@ -167,7 +169,7 @@
                 <i class="fa-regular fa-trash-can"></i>
               </button>
 
-              <button class="btn-search" type="button">
+              <button class="btn-search" id="btnSearchBooking" type="button">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 Tìm kiếm
               </button>
@@ -206,43 +208,44 @@
           <div class="panel-body">
             <div class="form-field">
               <label>Hành khách <span class="req">*</span></label>
-              <input class="input" id="cusName" value="Nguyễn Văn B" />
+              <input class="input" id="cusName" placeholder="Nhập họ tên..." autocomplete="off" />
+              <div class="err" id="errCusName"></div>
             </div>
 
             <div class="form-field">
               <label>CMND <span class="req">*</span></label>
-              <input class="input" id="cusCccd" value="123456789" />
+              <input class="input" id="cusCccd" inputmode="numeric" maxlength="12" placeholder="9 hoặc 12 chữ số" autocomplete="off" />
+              <div class="err" id="errCusCccd"></div>
             </div>
 
             <div class="form-field">
               <label>Điện thoại <span class="req">*</span></label>
-              <input class="input" id="cusPhone" value="0901234567" />
+              <input class="input" id="cusPhone" inputmode="tel" maxlength="10" placeholder="10 chữ số" autocomplete="off" />
+              <div class="err" id="errCusPhone"></div>
             </div>
 
             <div class="form-field">
               <label>Hạng vé <span class="req">*</span></label>
               <select class="input" id="ticketClass">
-                <option value="1">Business</option>
-                <option value="2">Economy</option>
+                <option value="1">Hạng 1</option>
+                <option value="2" selected>Hạng 2</option>
               </select>
 
               <div class="class-note">
-                <span id="seatNote">Business = 1 ghế trống</span>
-                <b id="classPrice">1,050,000 Vđ</b>
+                <span id="seatNote">Chưa chọn chuyến</span>
+                <b id="classPrice">—</b>
               </div>
             </div>
 
             <div class="price-row">
               <div class="price-label">Giá tiền <span class="req">*</span></div>
-              <div class="price-value" id="totalPrice">1,050,000 Vđ</div>
+              <div class="price-value" id="totalPrice">—</div>
             </div>
 
             <button class="btn-primary" id="btnCreate" type="button">Tạo phiếu đặt</button>
 
             <div class="form-links">
               <a href="#" id="btnReset">Làm mới</a>
-              <span>|</span>
-              <a href="dashboard.html">Quay lại</a>
             </div>
 
   

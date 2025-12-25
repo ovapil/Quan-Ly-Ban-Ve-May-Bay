@@ -10,6 +10,14 @@
   --radius: 12px;
 }
 
+/* Nền đồng bộ với các trang app-mode (booking) */
+body.app-mode{
+  background:
+    radial-gradient(1200px 220px at 25% 120px, rgba(143,190,255,0.28), transparent 65%),
+    radial-gradient(900px 220px at 75% 160px, rgba(190,210,255,0.25), transparent 62%),
+    linear-gradient(180deg, #F7F9FF 0%, #F3F6FF 50%, #F7F9FF 100%);
+}
+
 /* ===== MODAL HƯỚNG DẪN ===== */
 .modal{
   position: fixed;

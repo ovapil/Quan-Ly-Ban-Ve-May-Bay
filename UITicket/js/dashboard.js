@@ -112,13 +112,10 @@ const Dashboard = {
     chipEl.style.background = (user.role === "Admin") ? "var(--chip-admin)" : "var(--primary)";
 
     if (infoTile) {
-      if (user.role !== "Admin") {
-        infoTile.classList.add("disabled");
-        infoTile.title = "Không đủ quyền";
-      } else {
-        infoTile.classList.remove("disabled");
-        infoTile.title = "";
-      }
+      // Giữ giao diện đẹp: không làm mờ ô (disabled) cho user thường.
+      // Quyền truy cập vẫn được chặn ở tileClick().
+      infoTile.classList.remove("disabled");
+      infoTile.title = (user.role !== "Admin") ? "Chỉ Admin" : "";
     }
 
     localStorage.setItem('uiticket_user', JSON.stringify(user));
@@ -165,10 +162,7 @@ if (key === "booking") {
   window.location.href = "booking.html?preview=1";
   return;
 }
-if (key === "report") {
-  window.location.href = "report.html";
-  return;
-}
+
     if (key === "info") {
       this.showInfoModal();
       return;

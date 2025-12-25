@@ -21,8 +21,164 @@ const UI = {
 
     clearTimeout(toast._t);
     toast._t = setTimeout(() => (toast.style.display = "none"), 2200);
+  },
+
+  // Custom confirm dialog (dùng chung style ở common.css)
+  confirm(options = {}) {
+    return new Promise((resolve) => {
+      const {
+        title = "Xác nhận",
+        message = "Bạn có chắc chắn?",
+        confirmText = "Xác nhận",
+        cancelText = "Hủy",
+        type = "danger",
+        icon = "fa-circle-question",
+      } = options;
+
+      const overlay = document.createElement("div");
+      overlay.className = "confirm-overlay";
+      overlay.innerHTML = `
+        <div class="confirm-box">
+          <div class="confirm-header">
+            <div class="confirm-title">
+              <i class="fa-solid ${icon}"></i>
+              ${title}
+            </div>
+          </div>
+          <div class="confirm-body">${message}</div>
+          <div class="confirm-footer">
+            <button class="confirm-btn cancel" data-action="cancel">${cancelText}</button>
+            <button class="confirm-btn ${type}" data-action="confirm">${confirmText}</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+      setTimeout(() => overlay.classList.add("show"), 10);
+
+      const close = (ok) => {
+        overlay.classList.remove("show");
+        setTimeout(() => {
+          overlay.remove();
+          resolve(ok);
+        }, 200);
+      };
+
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) close(false);
+      });
+
+      overlay.querySelector(".confirm-footer").addEventListener("click", (e) => {
+        const action = e.target?.dataset?.action;
+        if (action === "confirm") close(true);
+        if (action === "cancel") close(false);
+      });
+    });
   }
 };
+
+function escAttr(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Timezone handling: always display times in Vietnam timezone.
+// Backend timestamps may come as ISO with timezone (preferred) or without timezone.
+// If no timezone info is present, we assume UTC to avoid "server UTC shown as local" drift.
+const VN_TIMEZONE = "Asia/Ho_Chi_Minh";
+
+function pad2(x) {
+  return String(x).padStart(2, "0");
+}
+
+function parseApiDate(dISO) {
+  if (!dISO) return null;
+  const s = String(dISO);
+  const hasTz = /([zZ]|[+\-]\d\d:\d\d)$/.test(s);
+  const normalized = hasTz ? s : `${s}Z`;
+  const d = new Date(normalized);
+  if (!isNaN(d.getTime())) return d;
+  const fallback = new Date(s);
+  return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+function fmtVnDateTime(dISO) {
+  const d = parseApiDate(dISO);
+  if (!d) return "";
+
+  // Manual VN timezone (UTC+7) formatting to be independent of client timezone settings.
+  // Example: if backend stores/returns UTC, adding +7 hours will show VN local time.
+  const vn = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  const yyyy = vn.getUTCFullYear();
+  const mm = pad2(vn.getUTCMonth() + 1);
+  const dd = pad2(vn.getUTCDate());
+  const hh = pad2(vn.getUTCHours());
+  const mi = pad2(vn.getUTCMinutes());
+  const ss = pad2(vn.getUTCSeconds());
+  return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
+}
+
+let lastTicketQuery = "";
+
+async function api(path, opts = {}) {
+  const token = getToken();
+  const headers = { ...(opts.headers || {}) };
+  if (!headers["Content-Type"] && opts.body) headers["Content-Type"] = "application/json";
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...opts, headers });
+  let data = {};
+  try { data = await res.json(); } catch {}
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function renderTickets(items, fmtMoney) {
+  const body = document.getElementById("ticketList");
+  if (!body) return;
+
+  body.innerHTML = "";
+
+  if (!items?.length) {
+    body.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#64748b;padding:14px;">Chưa có vé đã bán</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = items
+    .map((t) => {
+      const clsTxt =
+        String(t.ticket_class).toUpperCase() === "BUS" || String(t.ticket_class) === "1"
+          ? "Hạng 1"
+          : "Hạng 2";
+
+      const soldAt = fmtVnDateTime(t.created_at);
+
+      return `
+        <tr class="tk-row" data-id="${t.id}">
+          <td class="link">${t.ticket_code || ""}</td>
+          <td>${t.flight_code || ""}</td>
+          <td>${t.passenger_name || ""}</td>
+          <td>${t.cccd || ""}</td>
+          <td>${t.phone || ""}</td>
+          <td>${clsTxt}</td>
+          <td style="text-align:right;">${fmtMoney(t.price)}</td>
+          <td>${soldAt}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+async function loadTicketsFromApi(fmtMoney) {
+  const qs = new URLSearchParams();
+  if (lastTicketQuery) qs.set("q", lastTicketQuery);
+
+  const data = await api(`/tickets?${qs.toString()}`);
+  renderTickets(data.items || [], fmtMoney);
+}
 
 function getToken() {
   return localStorage.getItem("uiticket_token");
@@ -48,6 +204,10 @@ async function tryVerifyToken(token) {
 
 const SellPage = {
   attemptedSell: false, // ✅ chỉ bật true khi người dùng bấm "Bán vé"
+
+  sellInFlight: false,
+
+  hasSearchedFlights: false,
 
   flights: [],
   airports: [],
@@ -87,13 +247,16 @@ mapFlight(row) {
     toCode: row.ma_san_bay_den,
     fromName: row.san_bay_di,
     toName: row.san_bay_den,
+    fromCity: this.airports?.find((a) => String(a.ma_san_bay) === String(row.ma_san_bay_di))?.thanh_pho || "",
+    toCity: this.airports?.find((a) => String(a.ma_san_bay) === String(row.ma_san_bay_den))?.thanh_pho || "",
     // backward-compatible aliases used by renderFlights
     from: row.san_bay_di,
     to: row.san_bay_den,
     departISO: row.ngay_gio_bay,
     duration: this.minutesToText(Number(row.thoi_gian_bay || 0)),
     base: Number(row.gia_ve || 0),
-    booked: Number(row.ghe_da_ban || 0),
+    booked: Number(row.ghe_da_dat ?? 0),
+    sold: Number(row.ghe_da_ban ?? 0),
 
     // UI bạn đang có 2 dòng Hạng 1/Hạng 2 => map 2 hạng đầu
     seats1,
@@ -120,19 +283,29 @@ minutesToText(min) {
   },
 
   fmtMoney(n) {
-    return new Intl.NumberFormat("vi-VN").format(Number(n || 0)) + " Vđ";
+    return new Intl.NumberFormat("vi-VN").format(Number(n || 0)) + " VNĐ";
   },
 
   fmtDate(dISO) {
-    const d = new Date(dISO);
-    return d.toLocaleDateString("vi-VN");
+    const d = parseApiDate(dISO);
+    if (!d) return "";
+    const vn = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+    const yyyy = vn.getUTCFullYear();
+    const mm = pad2(vn.getUTCMonth() + 1);
+    const dd = pad2(vn.getUTCDate());
+    return `${dd}/${mm}/${yyyy}`;
   },
 
   fmtDateTime(dISO) {
-    const d = new Date(dISO);
-    const date = d.toLocaleDateString("vi-VN");
-    const time = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-    return `${date} ${time}`;
+    const d = parseApiDate(dISO);
+    if (!d) return "";
+    const vn = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+    const yyyy = vn.getUTCFullYear();
+    const mm = pad2(vn.getUTCMonth() + 1);
+    const dd = pad2(vn.getUTCDate());
+    const hh = pad2(vn.getUTCHours());
+    const mi = pad2(vn.getUTCMinutes());
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
   },
 
   priceByClass(base, cls) {
@@ -172,24 +345,75 @@ minutesToText(min) {
   },
 
   startUI() {
-    this.cache();
-    this.bind();
-    this.seedFilters();
+  this.cache();
+  this.bind();
 
-    // Try auto-loading available flights on start (no filters)
-    // seedFilters is async but we don't strictly need to await it here
-    // — calling applyFilter will fetch flights and render.
-    this.applyFilter().catch((e) => {
-      // show existing empty state if fetch fails
-      console.warn('Auto-fetch flights failed', e);
-      this.filtered = [...this.flights];
-      this.renderFlights();
+  // Ẩn danh sách chuyến bay cho tới khi người dùng bấm "Tìm chuyến"
+  this.setFlightsVisible(false);
+
+  // Chỉ load danh sách sân bay; không auto-fetch chuyến bay
+  this.seedFilters().catch((e) => {
+    console.warn("seedFilters failed", e);
+  });
+
+  // ✅ quan trọng: KHÔNG hiện lỗi ngay khi chưa bấm "Bán vé"
+  this.attemptedSell = false;
+  this.validateFields(false);   // ẩn err
+  this.recalcAndValidate();     // set nút + giá
+
+  // Sold tickets list panel
+  this.initTicketsList();
+},
+
+  setFlightsVisible(visible) {
+    if (this.el.flightTable) this.el.flightTable.style.display = visible ? "block" : "none";
+    if (!visible && this.el.emptyFlights) this.el.emptyFlights.style.display = "none";
+  },
+
+  initTicketsList() {
+    const hasPanel = !!document.getElementById("ticketList");
+    if (!hasPanel) return;
+
+    // Preview mode / chưa đăng nhập: không gọi API bookings
+    if (!getToken() || isPreviewMode()) return;
+
+    const fmtMoney = (n) => this.fmtMoney(n);
+
+    document.getElementById("btnSearchTicket")?.addEventListener("click", async () => {
+      lastTicketQuery = String(document.getElementById("ticketSearchInput")?.value || "").trim();
+      try {
+        await loadTicketsFromApi(fmtMoney);
+        UI.toast("🔎 Đã tìm kiếm", "success");
+      } catch (e) {
+        UI.toast(`❌ ${e.message}`, "error");
+      }
     });
 
-    // ✅ quan trọng: KHÔNG hiện lỗi ngay khi chưa bấm "Bán vé"
-    this.attemptedSell = false;
-    this.validateFields(false);   // ẩn err
-    this.recalcAndValidate();     // set nút + giá
+    document.getElementById("ticketSearchInput")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("btnSearchTicket")?.click();
+    });
+
+    document.getElementById("btnClearTicketFilter")?.addEventListener("click", async () => {
+      lastTicketQuery = "";
+      const input = document.getElementById("ticketSearchInput");
+      if (input) input.value = "";
+      UI.toast("🧹 Đã xoá lọc", "success");
+      try { await loadTicketsFromApi(fmtMoney); } catch {}
+    });
+
+    document.getElementById("btnRefreshTicket")?.addEventListener("click", async () => {
+      try {
+        await loadTicketsFromApi(fmtMoney);
+        UI.toast("🔄 Đã làm mới", "success");
+      } catch (e) {
+        UI.toast(`❌ ${e.message}`, "error");
+      }
+    });
+
+    // initial load
+    loadTicketsFromApi(fmtMoney).catch((e) => {
+      UI.toast(`❌ ${e.message}`, "error");
+    });
   },
 
   cache() {
@@ -199,6 +423,7 @@ minutesToText(min) {
       departDate: document.getElementById("departDate"),
       btnSearch: document.getElementById("btnSearch"),
       btnSwap: document.getElementById("btnSwap"),
+      btnBackTop: document.getElementById("btnBackTop"),
       btnNoti: document.getElementById("btnNoti"),
       tabHome: document.getElementById("tabHome"),
       tabAccount: document.getElementById("tabAccount"),
@@ -246,7 +471,14 @@ minutesToText(min) {
     this.el.tabAccount?.addEventListener("click", () => (window.location.href = "account.html"));
     this.el.tabSettings?.addEventListener("click", () => (window.location.href = "settings.html"));
 
-    this.el.btnSearch?.addEventListener("click", () => this.applyFilter());
+    // Back button
+    this.el.btnBackTop?.addEventListener("click", () => (window.location.href = "dashboard.html"));
+
+    this.el.btnSearch?.addEventListener("click", () => {
+      this.hasSearchedFlights = true;
+      this.setFlightsVisible(true);
+      this.applyFilter();
+    });
 
 
     this.el.btnSwap?.addEventListener("click", () => {
@@ -305,11 +537,14 @@ minutesToText(min) {
   const res = await fetch(`${API_BASE_URL}/airports`, {
     headers: { Authorization: `Bearer ${token}` }
   });
+
   const data = await res.json();
-  this.airports = data.airports || [];
+
+  // ✅ ăn được cả 2 kiểu response: {items:[...]} hoặc {airports:[...]}
+  this.airports = data.items || data.airports || [];
 
   const opt = this.airports
-    .map(a => `<option value="${a.ma_san_bay}">${a.ten_san_bay}</option>`)
+    .map(a => `<option value="${a.ma_san_bay}">${a.thanh_pho} - ${a.ten_san_bay} (${a.ma_san_bay})</option>`)
     .join("");
 
   const fill = (sel) => {
@@ -320,6 +555,7 @@ minutesToText(min) {
   fill(this.el.fromAirport);
   fill(this.el.toAirport);
 },
+
 
 
   async applyFilter() {
@@ -362,53 +598,81 @@ minutesToText(min) {
 
 
   renderFlights() {
-    const table = this.el.flightTable;
-    if (!table) return;
+  const table = this.el.flightTable;
+  if (!table) return;
 
-    // xóa row cũ
-    [...table.querySelectorAll(".flight-row")].forEach((x) => x.remove());
+  // Chỉ hiện danh sách sau khi user bấm "Tìm chuyến"
+  if (!this.hasSearchedFlights) {
+    this.setFlightsVisible(false);
+    return;
+  }
 
-    if (!this.filtered.length) {
-      if (this.el.emptyFlights) this.el.emptyFlights.style.display = "block";
-      return;
+  this.setFlightsVisible(true);
+
+  // ✅ đảm bảo luôn có header đúng 7 cột
+  let head = table.querySelector(".flight-head");
+  if (!head) {
+    head = document.createElement("div");
+    head.className = "flight-head";
+    table.prepend(head);
+  }
+  head.innerHTML = `
+    <div>Mã chuyến</div>
+    <div>Tuyến</div>
+    <div class="t-center">Khởi hành</div>
+    <div class="t-center">Thời gian</div>
+    <div class="t-center">Ghế trống</div>
+    <div class="t-center">Ghế đặt</div>
+    <div class="t-center"></div>
+  `;
+
+  // xóa row cũ
+  [...table.querySelectorAll(".flight-row")].forEach((x) => x.remove());
+
+  if (!this.filtered.length) {
+    if (this.el.emptyFlights) this.el.emptyFlights.style.display = "block";
+    return;
+  }
+  if (this.el.emptyFlights) this.el.emptyFlights.style.display = "none";
+
+  this.filtered.forEach((f) => {
+    const row = document.createElement("div");
+    row.className = "flight-row";
+
+    const routeDisplay = `${(f.fromCity || f.from)} → ${(f.toCity || f.to)}`;
+    const routeTooltip = `${(f.fromCity || "").trim()} - ${(f.fromName || f.from || "").trim()} (${(f.fromCode || "").trim()}) → ${(f.toCity || "").trim()} - ${(f.toName || f.to || "").trim()} (${(f.toCode || "").trim()})`;
+
+    row.innerHTML = `
+      <div><b>${f.code}</b></div>
+      <div class="route-cell" title="${escAttr(routeTooltip)}">${routeDisplay}</div>
+      <div class="t-center">${this.fmtDate(f.departISO)}</div>
+      <div class="t-center">${f.duration}</div>
+      <div class="t-center">${this.totalSeats(f)}</div>
+      <div class="t-center">${f.booked ?? 0}</div>
+      <div class="seat-cell"></div>
+    `;
+
+    const seatCell = row.querySelector(".seat-cell");
+    const hasSeat = this.totalSeats(f) > 0;
+
+    if (!hasSeat) {
+      seatCell.innerHTML = `<div class="pill-soldout">Đã hết chỗ</div>`;
+    } else {
+      const btn = document.createElement("button");
+      btn.className = "btn-choose";
+      btn.type = "button";
+      btn.textContent = "Chọn";
+      btn.onclick = () => {
+        this.selected = f;
+        this.applySelected();
+        UI.toast(`✅ Đã chọn ${f.code}`, "success");
+      };
+      seatCell.appendChild(btn);
     }
-    if (this.el.emptyFlights) this.el.emptyFlights.style.display = "none";
 
-    this.filtered.forEach((f) => {
-      const row = document.createElement("div");
-      row.className = "flight-row";
-
-      row.innerHTML = `
-        <div><b>${f.code}</b></div>
-        <div>${f.from} → ${f.to}</div>
-        <div>${this.fmtDate(f.departISO)}</div>
-        <div>${f.duration}</div>
-        <div class="t-center">${this.totalSeats(f)}</div>
-        <div class="t-center">${f.booked ?? ""}</div>
-        <div class="seat-cell"></div>
-      `;
-
-      const seatCell = row.querySelector(".seat-cell");
-      const hasSeat = this.totalSeats(f) > 0;
-
-      if (!hasSeat) {
-        seatCell.innerHTML = `<div class="pill-soldout">Đã hết chỗ</div>`;
-      } else {
-        const btn = document.createElement("button");
-        btn.className = "btn-choose";
-        btn.type = "button";
-        btn.textContent = "Chọn";
-        btn.onclick = () => {
-          this.selected = f;
-          this.applySelected();
-          UI.toast(`✅ Đã chọn ${f.code}`, "success");
-        };
-        seatCell.appendChild(btn);
-      }
-
-      table.appendChild(row);
-    });
-  },
+    table.appendChild(row);
+  });
+},
 
   applySelected() {
     if (!this.selected) return;
@@ -486,8 +750,12 @@ if (this.el.ticketClass) {
     this.el.seatNote.textContent = "Chưa chọn chuyến";
     this.el.classPrice.textContent = "—";
     this.el.totalPrice.textContent = "—";
-    this.el.btnSell.disabled = true;
     this.validateFields(this.attemptedSell);
+
+    // Giữ giao diện như yêu cầu: không khóa nút theo điều kiện.
+    // Chỉ khóa trong lúc đang gửi request.
+    if (this.el.btnSell) this.el.btnSell.disabled = !!this.sellInFlight;
+    this.hideAlert();
     return;
   }
 
@@ -509,10 +777,10 @@ if (this.el.ticketClass) {
 
   this.validateFields(this.attemptedSell);
 
-  const canSell = seatAvail > 0;
-  this.el.btnSell.disabled = !canSell;
+  // Không khóa nút theo ghế; chỉ báo khi người dùng bấm "Bán vé".
+  if (this.el.btnSell) this.el.btnSell.disabled = !!this.sellInFlight;
 
-  if (!canSell) {
+  if (this.attemptedSell && !(seatAvail > 0)) {
     this.showAlert("Chuyến bay (theo hạng vé đã chọn) đã hết chỗ. Vui lòng chọn hạng/chuyến khác.");
   } else {
     this.hideAlert();
@@ -535,10 +803,20 @@ if (this.el.ticketClass) {
       return;
     }
 
-    if (this.el.btnSell.disabled) {
+    // check ghế theo hạng đã chọn
+    const cls = this.el.ticketClass?.value || "";
+    const classes = this.selected?.classes || [];
+    const picked = classes.find(x => String(x.ma_hang_ve) === String(cls)) || classes[0];
+    const seatAvail = Number(picked?.con_lai ?? 0);
+    if (!(seatAvail > 0)) {
+      this.showAlert("Chuyến bay (theo hạng vé đã chọn) đã hết chỗ. Vui lòng chọn hạng/chuyến khác.");
       UI.toast("⚠️ Chuyến bay (theo hạng vé đã chọn) đã hết chỗ", "warn");
       return;
     }
+
+    if (this.sellInFlight) return;
+    this.sellInFlight = true;
+    this.recalcAndValidate();
 
     // gọi backend bán vé
 const token = getToken();
@@ -550,20 +828,22 @@ const payload = {
   sdt: this.el.phone.value.trim()
 };
 
-const res = await fetch(`${API_BASE_URL}/ban-ve`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`
-  },
-  body: JSON.stringify(payload)
-});
+let data = {};
+try {
+  const res = await fetch(`${API_BASE_URL}/ban-ve`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
 
-const data = await res.json();
-if (!res.ok) {
-  UI.toast(data?.error || "Bán vé thất bại", "error");
-  return;
-}
+  data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    UI.toast(data?.error || "Bán vé thất bại", "error");
+    return;
+  }
 
 // update lại chuyến bay trên UI
 const updated = this.mapFlight(data.flight);
@@ -578,6 +858,15 @@ this.validateFields(false);
 UI.toast(`✅ Bán vé thành công (${data.ticket?.ma_ve || "OK"})`, "success");
 this.applySelected();
 this.renderFlights();
+
+// refresh danh sách vé đã bán (nếu đang mở panel)
+if (document.getElementById("ticketList") && !isPreviewMode()) {
+  loadTicketsFromApi((n) => this.fmtMoney(n)).catch(() => {});
+}
+} finally {
+  this.sellInFlight = false;
+  this.recalcAndValidate();
+}
   },
 
   resetForm() {

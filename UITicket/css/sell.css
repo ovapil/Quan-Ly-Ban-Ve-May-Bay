@@ -6,6 +6,20 @@ body.sell-mode{
   background-attachment: fixed;
 }
 
+/* Page header with back button */
+.page-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.page-header .tool-btn {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* title */
 .sell-title{
   text-align:center;
@@ -14,6 +28,32 @@ body.sell-mode{
   color: rgba(46,74,168,0.75);
   font-size: clamp(34px, 3.4vw, 46px);
   margin: 6px 0 18px;
+}
+
+/* Tool button */
+.tool-btn {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+
+.tool-btn.back {
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.12);
+  color: #111;
+}
+
+.tool-btn.back:hover {
+  box-shadow: 0 12px 28px rgba(17,24,39,0.18);
+}
+
+.tool-btn i { 
+  font-size: 18px; 
 }
 
 /* wrapper */
@@ -27,8 +67,9 @@ body.sell-mode{
 
 .sell-grid{
   display:grid;
-  grid-template-columns: 1.15fr 0.95fr;
-  gap: 18px;
+  grid-template-columns: 1fr minmax(320px, 380px);
+  gap: 22px;
+  align-items:start;
 }
 
 @media (max-width: 1100px){
@@ -487,14 +528,17 @@ body.app-mode{
 }
 
 /* ✅ sell: thêm cột Ghế đặt */
+/* ROUTE rộng hơn, Ghế trống/Ghế đặt hẹp hơn */
 .sell-page .flight-head,
 .sell-page .flight-row{
-  display:grid;
-  grid-template-columns: 100px 1.6fr 130px 120px 90px 90px 140px;
-  align-items:center;
+  display: grid;
+  align-items: center;
   gap: 10px;
   padding: 12px 14px;
+  /* mã | tuyến | khởi hành | thời gian | ghế trống | ghế đặt | action */
+  grid-template-columns: 110px 2.4fr 140px 120px 110px 110px 130px !important;
 }
+
 
 .flight-head{
   background: #F7F8FF;
@@ -534,6 +578,123 @@ body.app-mode{
   display:flex;
   align-items:center;
 }
+
+/* ===== Booking-like list panel (Sell page) ===== */
+.sell-page .list-panel .list-title{
+  font-weight: 900;
+  font-size: 22px;
+  margin-bottom: 12px;
+  color: var(--primary);
+}
+
+/* Ensure all panel headers match list title size */
+.sell-page .panel-head{
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.sell-page .panel-head h2{
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.sell-page .list-tools{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  flex-wrap: nowrap;
+  margin-bottom: 12px;
+  overflow-x: auto;
+}
+
+.sell-page .list-tools .input.grow{
+  min-width: 260px;
+}
+
+.sell-page .list-tools > *{
+  flex: 0 0 auto;
+}
+
+.sell-page .list-tools .input.grow{
+  flex: 1 1 auto;
+}
+
+.sell-page .icon-mini{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 0;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(46,74,168,0.10);
+  cursor: pointer;
+  display:grid;
+  place-items:center;
+  color:#334155;
+}
+
+.sell-page .btn-search{
+  height: 44px;
+  border-radius: 14px;
+  border: 0;
+  background: #4f78d8;
+  color:#fff;
+  font-weight: 900;
+  padding: 0 18px;
+  cursor:pointer;
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+
+.sell-page .table-card{
+  background:#fff;
+  border-radius: 18px;
+  overflow:hidden;
+  box-shadow: inset 0 0 0 1px rgba(46,74,168,0.10);
+}
+
+.sell-page .tbl{
+  width:100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.sell-page .tbl th{
+  background:#F7F8FF;
+  color: var(--primary);
+  text-align:left;
+  font-weight: 900;
+  padding: 12px 14px;
+  font-size: 14px;
+  border-bottom: 1px solid #EEF2FF;
+}
+
+.sell-page .tbl td{
+  padding: 12px 14px;
+  border-top: 1px solid #EEF2FF;
+  font-weight: 700;
+  font-size: 14px;
+  color:#111827;
+}
+
+.sell-page .link{ color:#2b5bd7; font-weight: 900; }
+
+
+
+.sell-page .btn-cancel{
+  background:#ef4444;
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  padding:10px 14px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.sell-page .btn-cancel:hover{ filter: brightness(.95); }
 
 .empty-flights{
   margin-top: 12px;
@@ -651,7 +812,13 @@ body.app-mode{
   color: #ef4444;
   font-weight: 900;
   font-size: 12.5px;
-  min-height: 16px;
+  min-height: 0;
+}
+
+/* Không chừa khoảng trống khi không có lỗi */
+.err:empty{
+  display: none;
+  margin-top: 0;
 }
 
 /* FIX conflict: dashboard.css có .req làm dấu * bị “thành ô” */
@@ -673,9 +840,33 @@ body.app-mode{
 /* TỈ LỆ 2 CỘT GIỐNG ẢNH (left ~ 65%, right ~ 35%) */
 .sell-grid{
   display:grid;
-  grid-template-columns: 1.55fr 1fr; /* <= giảm so với 1.85fr */
+  grid-template-columns: 1fr minmax(340px, 420px);
   gap: 22px;
   align-items:start;
+}
+
+/* ===== NỐI LIỀN 2 KHUNG BÊN TRÁI (giống Booking) ===== */
+.sell-page .left-col{
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sell-page .left-col > .panel:not(:last-child){
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.sell-page .left-col > .panel:not(:first-child){
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  margin-top: 0 !important;
+  border-top: 0 !important;
+}
+
+.sell-page .left-col > .panel + .panel{
+  margin-top: -1px !important;
 }
 
 @media (max-width: 1100px){
@@ -730,7 +921,7 @@ body.app-mode{
 .sell-page .flight-head{
   font-size: var(--fz-th);
   letter-spacing: .2px;
-  padding: 10px 14px;
+  padding: 12px 14px;
 }
 
 .sell-page .flight-row{
@@ -743,19 +934,18 @@ body.app-mode{
 .sell-page .flight-head,
 .sell-page .flight-row{
   /* code | route | depart | duration | seats | booked | action */
-  grid-template-columns: 100px 2.1fr 130px 120px 90px 90px 140px !important;
+  grid-template-columns: 110px 2.4fr 140px 120px 110px 110px 130px !important;
 }
 
 /* route hiển thị tối đa 2 dòng, không vỡ từng chữ */
 .sell-page .flight-row > div:nth-child(2){
-  white-space: normal;
-  word-break: keep-all;      /* ✅ giữ từ */
-  overflow-wrap: anywhere;   /* nếu quá dài thì mới bẻ */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;     /* ✅ tối đa 2 dòng */
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sell-page .flight-row .route-cell{
+  cursor: help;
 }
 
 /* ngày + thời gian: không xuống dòng */
@@ -795,4 +985,29 @@ body.app-mode{
 .sell-page .price-value{
   font-size: 20px;
   font-weight: 900;
+}
+
+/* ===== FIX CỨNG: flight table phải là GRID theo 7 cột ===== */
+body.sell-mode .flight-head,
+body.sell-mode .flight-row{
+  display: grid !important;
+  align-items: center;
+  column-gap: 10px;
+
+  /* mã | tuyến | khởi hành | thời gian | ghế trống | ghế đặt | action */
+  grid-template-columns: 110px 2.4fr 140px 120px 110px 110px 130px !important;
+}
+
+body.sell-mode .flight-head > div,
+body.sell-mode .flight-row > div{
+  min-width: 0;
+}
+
+body.sell-mode .seat-cell{
+  justify-self: center !important;
+  text-align: center;
+}
+
+body.sell-mode .flight-row > div:last-child{
+  justify-self: end;
 }
