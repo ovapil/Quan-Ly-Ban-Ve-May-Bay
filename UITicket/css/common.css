@@ -27,6 +27,11 @@
   font-family: "Noto Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
+/* Prevent horizontal page scroll caused by full-bleed elements */
+html, body {
+  overflow-x: hidden;
+}
+
 /* ============================================
    TOAST NOTIFICATION - Z-INDEX CAO NHẤT
    ============================================ */

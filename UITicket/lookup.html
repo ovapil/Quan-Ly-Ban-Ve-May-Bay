@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Tra cứu chuyến bay</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/lookup.css" />
+</head>
+
+<body class="app-mode">
+  <div id="toast">Thông báo</div>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="bar">
+      <div class="brand">
+        <img class="brand-logo-img" src="assets/images/logo.png" alt="UITicket Logo" />
+        <div class="name">
+          <div class="title">UITicket</div>
+          <div class="slogan">Buy&Fly. Catch your sky!</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab active" onclick="window.location.href='dashboard.html'">Trang chủ</button>
+        <button class="tab" onclick="window.location.href='account.html'">Tài khoản</button>
+        <button class="tab" onclick="window.location.href='settings.html'">Cài đặt</button>
+      </nav>
+
+      <div class="actions">
+        <button class="icon-btn" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge" id="notifBadge">1</span>
+        </button>
+        <button class="icon-btn" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page lookup-page">
+    <!-- Hero Section với Search Box -->
+    <section class="hero-section">
+      <div class="hero-bg">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="plane-icon">
+          <i class="fa-solid fa-plane"></i>
+        </div>
+      </div>
+
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          TRA CỨU CHUYẾN BAY
+        </h1>
+        <p class="hero-subtitle">Tìm kiếm chuyến bay nhanh chóng và dễ dàng</p>
+      </div>
+
+      <!-- Search Card -->
+      <div class="search-card">
+        <!-- Tab chọn loại tìm kiếm -->
+        <div class="search-tabs">
+          <button class="search-tab active" data-tab="flight" onclick="Lookup.switchTab('flight')">
+            <i class="fa-solid fa-plane-departure"></i>
+            Theo chuyến bay
+          </button>
+          <button class="search-tab" data-tab="route" onclick="Lookup.switchTab('route')">
+            <i class="fa-solid fa-route"></i>
+            Theo tuyến bay
+          </button>
+        </div>
+
+        <!-- Form tìm kiếm theo chuyến bay -->
+        <div class="search-form" id="searchFlight">
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>
+                <i class="fa-solid fa-plane"></i>
+                Mã chuyến bay
+              </label>
+              <div class="input-with-icon">
+                <input type="text" id="flightCodeInput" class="input" placeholder="Vui lòng nhập mã chuyến bay ..." />
+              </div>
+            </div>
+            
+            <div class="form-group flex-1">
+              <label>
+                <i class="fa-solid fa-calendar-day"></i>
+                Ngày bay
+              </label>
+              <input type="date" id="flightDateInput" class="input" />
+            </div>
+
+            <div class="form-group btn-group">
+              <button class="btn-search" onclick="Lookup.searchByFlight()">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Tra cứu
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form tìm kiếm theo tuyến bay -->
+        <div class="search-form hidden" id="searchRoute">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>
+                <i class="fa-solid fa-plane-departure"></i>
+                Điểm đi
+              </label>
+              <select id="fromAirport" class="input">
+                <option value="">Chọn sân bay đi</option>
+              </select>
+            </div>
+
+            <div class="swap-container">
+              <button class="swap-btn" type="button" onclick="Lookup.swapAirports()" title="Đổi chiều">
+                <i class="fa-solid fa-right-left"></i>
+              </button>
+            </div>
+
+            <div class="form-group flex-1">
+              <label>
+                <i class="fa-solid fa-plane-arrival"></i>
+                Điểm đến
+              </label>
+              <select id="toAirport" class="input">
+                <option value="">Chọn sân bay đến</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <i class="fa-solid fa-calendar-day"></i>
+                Ngày bay
+              </label>
+              <input type="date" id="routeDateInput" class="input" />
+            </div>
+
+            <div class="form-group btn-group">
+              <button class="btn-search" onclick="Lookup.searchByRoute()">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Tra cứu
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kết quả tìm kiếm -->
+    <section class="results-section" id="resultsSection">
+      <!-- Header kết quả -->
+      <div class="results-header">
+        <div class="results-info">
+          <h2>
+            <i class="fa-solid fa-list"></i>
+            Danh sách chuyến bay
+          </h2>
+          <span class="results-count" id="resultsCount">Đang tải...</span>
+        </div>
+
+        <div class="results-actions">
+          <!-- (Removed left refresh button per request) -->
+
+          <!-- Lọc -->
+          <button class="filter-btn" onclick="Lookup.toggleFilter()">
+            <i class="fa-solid fa-filter"></i>
+            Bộ lọc
+          </button>
+
+          <!-- Giá vé: button with menu -->
+          <div class="price-sort">
+            <button id="priceSortBtn" class="filter-btn" onclick="Lookup.togglePriceSortMenu(event)">
+              <i class="fa-solid fa-tags"></i>
+              Giá vé
+              <i class="fa-solid fa-caret-down" style="margin-left:6px;font-size:12px"></i>
+            </button>
+            <div id="priceSortMenu" class="price-sort-menu hidden">
+              <button class="price-option" onclick="Lookup.setPriceSort('price-asc')">Giá vé (thấp → cao)</button>
+              <button class="price-option" onclick="Lookup.setPriceSort('price-desc')">Giá vé (cao → thấp)</button>
+              <button class="price-option" onclick="Lookup.setPriceSort('')">Bỏ chọn</button>
+            </div>
+          </div>
+
+          <!-- Refresh -->
+          <button class="refresh-btn" onclick="Lookup.refresh()">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bộ lọc mở rộng -->
+      <div class="filter-panel hidden" id="filterPanel">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <h4>Hạng vé</h4>
+            <label class="checkbox-item">
+              <input type="checkbox" checked value="Eco" onchange="Lookup.applyFilter()" />
+              <span>Phổ thông (Economy)</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked value="Business" onchange="Lookup.applyFilter()" />
+              <span>Thương gia (Business)</span>
+            </label>
+            <!-- Removed First class per request -->
+          </div>
+
+          <div class="filter-group">
+            <h4>Trạng thái chuyến bay</h4>
+            <label class="checkbox-item">
+              <input type="checkbox" checked value="not-departed" onchange="Lookup.applyFilter()" />
+              <span>Chưa cất cánh</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked value="departed" onchange="Lookup.applyFilter()" />
+              <span>Đã cất cánh</span>
+            </label>
+          </div>
+
+          <div class="filter-group">
+            <h4>Chuyến bay</h4>
+            <label class="checkbox-item">
+              <input type="checkbox" checked value="direct" onchange="Lookup.applyFilter()" />
+              <span>Bay thẳng</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked value="stopover" onchange="Lookup.applyFilter()" />
+              <span>Có điểm dừng</span>
+            </label>
+          </div>
+
+          <!-- Removed Sắp xếp group: price sort moved to header button -->
+
+          <div class="filter-group">
+            <h4>Tình trạng ghế</h4>
+            <label class="checkbox-item">
+              <input type="checkbox" checked value="available" onchange="Lookup.applyFilter()" />
+              <span>Còn ghế trống</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="soldout" onchange="Lookup.applyFilter()" />
+              <span>Đã hết ghế</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn-reset" onclick="Lookup.resetFilter()">
+            <i class="fa-solid fa-rotate-left"></i>
+            Đặt lại
+          </button>
+          <button class="btn-apply" onclick="Lookup.applyFilter()">
+            <i class="fa-solid fa-check"></i>
+            Áp dụng
+          </button>
+        </div>
+      </div>
+
+      <!-- Danh sách kết quả -->
+      <div class="results-list" id="resultsList">
+        <!-- Flight Card sẽ được render bởi JS -->
+        
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">
+            <i class="fa-solid fa-plane-circle-question"></i>
+          </div>
+          <h3>Chưa có kết quả</h3>
+          <p>Nhập thông tin tìm kiếm để tra cứu chuyến bay</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination hidden" id="pagination">
+        <button class="page-btn" onclick="Lookup.prevPage()" id="prevPageBtn">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div class="page-numbers" id="pageNumbers">
+          <!-- Sẽ render bằng JS -->
+        </div>
+        <button class="page-btn" onclick="Lookup.nextPage()" id="nextPageBtn">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- Chi tiết chuyến bay (Modal) -->
+    <div class="modal hidden" id="flightDetailModal">
+      <div class="modal-card flight-detail-card">
+        <div class="modal-head">
+          <h3>
+            <i class="fa-solid fa-plane"></i>
+            Chi tiết chuyến bay
+          </h3>
+          <button class="modal-close" onclick="Lookup.closeDetail()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Flight Header -->
+          <div class="detail-header">
+            <div class="flight-code-big">
+              <span class="code" id="detailFlightCode">VN123</span>
+              <span class="status available" id="detailStatus">Còn chỗ</span>
+            </div>
+            <div class="route-visual">
+              <div class="airport from">
+                <span class="code" id="detailFromCode">SGN</span>
+                <span class="name" id="detailFromName">TP. Hồ Chí Minh</span>
+                <span class="time" id="detailDepartTime">08:30</span>
+              </div>
+              <div class="route-line">
+                <div class="line"></div>
+                <i class="fa-solid fa-plane"></i>
+                <span class="duration" id="detailDuration">2h 10m</span>
+              </div>
+              <div class="airport to">
+                <span class="code" id="detailToCode">HAN</span>
+                <span class="name" id="detailToName">Hà Nội</span>
+                <span class="time" id="detailArriveTime">10:40</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flight Info Grid: three horizontal sections A | B | C -->
+          <div class="detail-grid three-up">
+            <div class="detail-section info-card">
+              <h4><i class="fa-solid fa-info-circle"></i> Thông tin chuyến bay</h4>
+              <div class="info-list">
+                <div class="info-item">
+                  <span class="label">Ngày bay</span>
+                  <span class="value" id="detailDate">25/12/2025</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Loại máy bay</span>
+                  <span class="value" id="detailAircraft">N19</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Hãng</span>
+                  <span class="value" id="detailAirline">UITK23 Airlines</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Số điểm dừng</span>
+                  <span class="value stopover-count" id="detailStopoverCount">
+                    <span class="badge-direct">Bay thẳng</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-section seat-card">
+              <h4><i class="fa-solid fa-couch"></i> Tình trạng ghế</h4>
+              <div class="seat-status-grid" id="detailSeats">
+                <!-- Render bằng JS -->
+              </div>
+            </div>
+
+            <div class="detail-section stopover-card" id="detailStopoverSection">
+              <h4><i class="fa-solid fa-map-marker-alt"></i> Điểm dừng</h4>
+              <div class="stopover-list" id="detailStopovers">
+                <!-- Render bằng JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Price Section -->
+          <div class="price-section">
+            <h4><i class="fa-solid fa-tags"></i> Bảng giá vé</h4>
+            <div class="price-grid" id="detailPrices">
+              <!-- Render bằng JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="Lookup.closeDetail()">
+            <i class="fa-solid fa-xmark"></i>
+            Đóng
+          </button>
+          <button class="btn-secondary btn-booking" onclick="Lookup.goToBooking()">
+            <i class="fa-solid fa-bookmark"></i>
+            Đặt chỗ ngay
+          </button>
+          <button class="btn-primary" onclick="Lookup.goToSell()">
+            <i class="fa-solid fa-ticket"></i>
+            Bán vé ngay
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p>© 2025 UITicket - Buy&Fly. Catch your sky!</p>
+    </div>
+  </footer>
+
+  <script src="js/storage.js"></script>
+  <script src="js/lookup.js"></script>
+</body>
+</html>

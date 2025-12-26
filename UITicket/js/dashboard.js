@@ -164,6 +164,16 @@ const Dashboard = {
       return;
     }
 
+    if (key === "lookup") {
+      window.location.href = "lookup.html";
+      return;
+    }
+
+    if (key === "customers") {
+      window.location.href = "passenger.html";
+      return;
+    }
+
     if (key === "report") {
       // ✅ FIX: Lập báo cáo phải mở report.html, không phải trang bán vé
       window.location.href = "report.html";
@@ -176,7 +186,7 @@ const Dashboard = {
     }
 
     if (key === "sell") {
-      window.location.href = "sell_page.html";
+      window.location.href = "sell.html";
       return;
     }
 

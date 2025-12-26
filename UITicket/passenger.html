@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Quản lý hành khách</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/passenger.css" />
+</head>
+
+<body class="app-mode">
+  <div id="toast">Thông báo</div>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="bar">
+      <div class="brand">
+        <img class="brand-logo-img" src="assets/images/logo.png" alt="UITicket Logo" />
+        <div class="name">
+          <div class="title">UITicket</div>
+          <div class="slogan">Buy&Fly. Catch your sky!</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab" onclick="window.location.href='dashboard.html'">Trang chủ</button>
+        <button class="tab" onclick="window.location.href='account.html'">Tài khoản</button>
+        <button class="tab" onclick="window.location.href='settings.html'">Cài đặt</button>
+      </nav>
+
+      <div class="actions">
+        <button class="icon-btn" aria-label="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge" id="notifBadge">1</span>
+        </button>
+        <button class="icon-btn" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page passenger-page">
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-bg"></div>
+      <div class="cloud cloud-1"></div>
+      <div class="cloud cloud-2"></div>
+      <div class="cloud cloud-3"></div>
+
+      <div class="container">
+        <div class="hero-content">
+          <h1 class="hero-title">
+            <i class="fa-solid fa-users"></i>
+            Quản lý hành khách
+          </h1>
+          <p class="hero-subtitle">Quản lý thông tin hành khách trong các giao dịch vé & đặt chỗ</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="passenger-layout">
+        <!-- LEFT: Danh sách hành khách -->
+        <section class="passenger-list-section">
+          <div class="panel">
+            <div class="panel-head">
+              <h2><i class="fa-solid fa-users"></i> Danh sách hành khách</h2>
+              <div class="head-actions">
+                <button class="btn-icon" id="btnRefresh" title="Làm mới">
+                  <i class="fa-solid fa-rotate"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="panel-body">
+              <!-- Search & Filter -->
+              <div class="search-filter-bar">
+                <div class="search-box">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="searchInput" placeholder="Tìm theo tên, CMND, SĐT..." />
+                  <button class="btn-clear" id="btnClearSearch" title="Xóa">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div class="filter-group">
+                  <select id="filterStatus" class="filter-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="paid">Đã thanh toán</option>
+                    <option value="booked">Đặt chỗ</option>
+                    <option value="cancelled">Đã hủy</option>
+                    <option value="expired">Hết hạn</option>
+                  </select>
+
+                  <select id="filterSort" class="filter-select">
+                    <option value="newest">Mới nhất</option>
+                    <option value="oldest">Cũ nhất</option>
+                    <option value="name-asc">Tên A-Z</option>
+                    <option value="name-desc">Tên Z-A</option>
+                    <option value="most-tickets">Nhiều vé nhất</option>
+                  </select>
+                </div>
+                <p class="filter-note"><i class="fa-solid fa-info-circle"></i> Lọc theo trạng thái giao dịch gần nhất</p>
+              </div>
+
+              <!-- Stats Cards -->
+              <div class="stats-row">
+                <div class="stat-card">
+                  <div class="stat-icon blue">
+                    <i class="fa-solid fa-users"></i>
+                  </div>
+                  <div class="stat-info">
+                    <span class="stat-value" id="statTotal">0</span>
+                    <span class="stat-label">Tổng hành khách</span>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon green">
+                    <i class="fa-solid fa-circle-check"></i>
+                  </div>
+                  <div class="stat-info">
+                    <span class="stat-value" id="statPaid">0</span>
+                    <span class="stat-label">Đã thanh toán</span>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon orange">
+                    <i class="fa-solid fa-clock"></i>
+                  </div>
+                  <div class="stat-info">
+                    <span class="stat-value" id="statBooked">0</span>
+                    <span class="stat-label">Đặt chỗ</span>
+                  </div>
+                </div>
+
+                <div class="stat-card">
+                  <div class="stat-icon red">
+                    <i class="fa-solid fa-ban"></i>
+                  </div>
+                  <div class="stat-info">
+                    <span class="stat-value" id="statCancelled">0</span>
+                    <span class="stat-label">Đã hủy / Hết hạn</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Passenger Table -->
+              <div class="table-container">
+                <table class="passenger-table" id="passengerTable">
+                  <thead>
+                    <tr>
+                      <th class="col-stt">STT</th>
+                      <th class="col-name">Hành khách</th>
+                      <th class="col-cmnd">CMND/CCCD</th>
+                      <th class="col-tickets">Số vé</th>
+                      <th class="col-status">
+                        Trạng thái
+                        <i class="fa-solid fa-circle-info status-hint" title="Trạng thái của giao dịch gần nhất"></i>
+                      </th>
+                      <th class="col-actions">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="passengerBody">
+                    <!-- JS render rows -->
+                  </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display:none;">
+                  <i class="fa-solid fa-user-slash"></i>
+                  <p>Chưa có hành khách nào</p>
+                </div>
+
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingState" style="display:none;">
+                  <i class="fa-solid fa-spinner fa-spin"></i>
+                  <p>Đang tải dữ liệu...</p>
+                </div>
+              </div>
+
+              <!-- Pagination -->
+              <div class="pagination" id="pagination">
+                <div class="page-info">
+                  Hiển thị <span id="showingFrom">0</span>-<span id="showingTo">0</span> 
+                  trong <span id="totalRecords">0</span> hành khách
+                </div>
+                <div class="page-controls">
+                  <button class="page-btn" id="btnPrevPage" disabled>
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <div class="page-numbers" id="pageNumbers">
+                    <!-- JS render -->
+                  </div>
+                  <button class="page-btn" id="btnNextPage">
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT: Chi tiết hành khách -->
+        <aside class="passenger-detail-section">
+          <div class="panel">
+            <div class="panel-head">
+              <h2><i class="fa-solid fa-user"></i> Chi tiết hành khách</h2>
+            </div>
+
+            <div class="panel-body">
+              <!-- No Selection State -->
+              <div class="no-selection" id="noSelection">
+                <i class="fa-solid fa-hand-pointer"></i>
+                <p>Chọn một hành khách để xem chi tiết</p>
+              </div>
+
+              <!-- Detail Content -->
+              <div class="detail-content" id="detailContent" style="display:none;">
+                <!-- Avatar & Name -->
+                <div class="detail-header">
+                  <div class="avatar" id="detailAvatar">
+                    <i class="fa-solid fa-user"></i>
+                  </div>
+                  <div class="header-info">
+                    <h3 class="detail-name" id="detailName">—</h3>
+                    <span class="detail-status" id="detailStatus">—</span>
+                  </div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="info-grid">
+                  <div class="info-item">
+                    <label><i class="fa-solid fa-id-card"></i> CMND/CCCD</label>
+                    <div class="masked-value">
+                      <span id="detailCmnd">—</span>
+                      <button class="btn-toggle-mask" onclick="Passenger.toggleMask('cmnd')" title="Hiện/Ẩn">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <label><i class="fa-solid fa-phone"></i> Số điện thoại</label>
+                    <div class="masked-value">
+                      <span id="detailPhone">—</span>
+                      <button class="btn-toggle-mask" onclick="Passenger.toggleMask('phone')" title="Hiện/Ẩn">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <label><i class="fa-solid fa-calendar"></i> Ngày tạo hồ sơ</label>
+                    <span id="detailCreated">—</span>
+                  </div>
+                </div>
+
+                <!-- Transaction History -->
+                <div class="trip-section">
+                  <h4><i class="fa-solid fa-ticket"></i> Lịch sử giao dịch</h4>
+                  <div class="trip-stats">
+                    <div class="trip-stat">
+                      <span class="trip-value" id="detailTotalTickets">0</span>
+                      <span class="trip-label">Tổng vé</span>
+                    </div>
+                    <div class="trip-stat">
+                      <span class="trip-value" id="detailTotalSpent">0đ</span>
+                      <span class="trip-label">Tổng thanh toán</span>
+                    </div>
+                  </div>
+
+                  <div class="trip-list" id="tripList">
+                    <!-- Bảng lịch sử giao dịch -->
+                    <table class="transaction-table">
+                      <thead>
+                        <tr>
+                          <th style="width:40px"></th>
+                          <th>Mã GD</th>
+                          <th>Chuyến bay/Ngày</th>
+                          <th>Trạng thái</th>
+                          <th>Số tiền</th>
+                        </tr>
+                      </thead>
+                      <tbody id="transactionBody">
+                        <!-- JS render -->
+                      </tbody>
+                    </table>
+                    <div class="no-trips" id="noTransactions">Chưa có giao dịch nào</div>
+                    <div class="more-trans">
+                      <button class="btn-more" id="btnMoreTrans">Xem thêm</button>
+                    </div>
+                  </div>
+                  <p class="status-note">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Trạng thái hiển thị là trạng thái của giao dịch gần nhất
+                  </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="detail-actions">
+                  <button class="btn-edit" id="btnEdit">
+                    <i class="fa-solid fa-pen"></i> Sửa
+                  </button>
+                  <button class="btn-delete" id="btnDelete">
+                    <i class="fa-solid fa-trash"></i> Xóa
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: Thêm/Sửa hành khách -->
+  <div class="modal-overlay hidden" id="passengerModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="modalTitle">Thêm hành khách mới</h3>
+        <button class="modal-close" onclick="Passenger.closeModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="passengerForm" autocomplete="off">
+          <input type="hidden" id="passengerId" />
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Họ và tên <span class="req">*</span></label>
+              <input type="text" class="input" id="inputName" placeholder="Nhập họ và tên..." />
+              <span class="error" id="errName"></span>
+            </div>
+          </div>
+
+          <div class="form-row two-cols">
+            <div class="form-group">
+              <label>CMND/CCCD <span class="req">*</span></label>
+              <input type="text" class="input" id="inputCmnd" placeholder="9 hoặc 12 chữ số" maxlength="12" />
+              <span class="error" id="errCmnd"></span>
+            </div>
+            <div class="form-group">
+              <label>Số điện thoại <span class="req">*</span></label>
+              <input type="text" class="input" id="inputPhone" placeholder="10 chữ số" maxlength="10" />
+              <span class="error" id="errPhone"></span>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="Passenger.closeModal()">Hủy</button>
+        <button class="btn-save" id="btnSave" onclick="Passenger.savePassenger()">
+          <i class="fa-solid fa-check"></i> Lưu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Xác nhận xóa -->
+  <div class="modal-overlay hidden" id="deleteModal">
+    <div class="modal-card modal-sm">
+      <div class="modal-head">
+        <h3>Xác nhận xóa</h3>
+        <button class="modal-close" onclick="Passenger.closeDeleteModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="delete-confirm">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <p>Bạn có chắc muốn xóa hành khách <strong id="deletePassengerName"></strong>?</p>
+          <span class="delete-warning">Hành động này không thể hoàn tác.</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="Passenger.closeDeleteModal()">Hủy</button>
+        <button class="btn-delete-confirm" id="btnConfirmDelete">
+          <i class="fa-solid fa-trash"></i> Xóa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Transactions full list -->
+  <div class="modal-overlay hidden" id="transactionsModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="transactionsModalTitle">Lịch sử giao dịch</h3>
+        <button class="modal-close" id="closeTransactionsModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-stats">
+          <div class="stat-left">
+            <div class="stat-label">Tổng vé</div>
+            <div class="stat-value" id="modalTotalTickets">0</div>
+          </div>
+          <div class="stat-right">
+            <div class="stat-label">Tổng thanh toán</div>
+            <div class="stat-value" id="modalTotalSpent">0đ</div>
+          </div>
+        </div>
+
+        <div class="modal-table-scroll" style="max-height:60vh; overflow:auto;">
+          <table class="transaction-table">
+            <thead>
+              <tr>
+                <th style="width:40px"></th>
+                <th>Mã GD</th>
+                <th>Chuyến bay/Ngày</th>
+                <th>Trạng thái</th>
+                <th>Số tiền</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsModalBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/passenger.js"></script>
+</body>
+</html>

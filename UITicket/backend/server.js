@@ -2143,7 +2143,17 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
     const { from, to, date, onlyAvailable } = req.query;
 
     const params = [];
-    let where = `WHERE cb.trang_thai = 1 AND cb.ngay_gio_bay >= NOW()`;
+    // By default return all flights. Previously this endpoint filtered to active/upcoming only.
+    // Provide optional query flags `upcoming=1` and `onlyActive=1` to restore that behavior.
+    let where = `WHERE 1=1`;
+
+    if (req.query.upcoming === '1' || req.query.upcoming === 'true') {
+      where += ` AND cb.ngay_gio_bay >= NOW()`;
+    }
+
+    if (req.query.onlyActive === '1' || req.query.onlyActive === 'true') {
+      where += ` AND cb.trang_thai = 1`;
+    }
 
     if (from) { params.push(from); where += ` AND cb.san_bay_di = $${params.length}`; }
     if (to)   { params.push(to);   where += ` AND cb.san_bay_den = $${params.length}`; }
@@ -2159,6 +2169,7 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
         cb.gia_ve,
         cb.ngay_gio_bay,
         cb.thoi_gian_bay,
+        (cb.ngay_gio_bay < NOW()) AS departed,
         cb.san_bay_di  AS ma_san_bay_di,
         cb.san_bay_den AS ma_san_bay_den,
         sb_di.ten_san_bay  AS san_bay_di,
@@ -2184,6 +2195,21 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
           ) FILTER (WHERE chv.ma_hang_ve IS NOT NULL),
           '[]'::json
         ) AS hang_ve
+        , COALESCE(
+          (
+            SELECT JSON_AGG(JSON_BUILD_OBJECT(
+              'ma_san_bay', ctsg.ma_san_bay,
+              'ten_san_bay', sb_tg.ten_san_bay,
+              'thanh_pho', sb_tg.thanh_pho,
+              'thoi_gian_dung', ctsg.thoi_gian_dung,
+              'ghi_chu', ctsg.ghi_chu,
+              'thu_tu_dung', ctsg.thu_tu_dung
+            ) ORDER BY ctsg.thu_tu_dung)
+            FROM chi_tiet_san_bay_trung_gian ctsg
+            LEFT JOIN san_bay sb_tg ON sb_tg.ma_san_bay = ctsg.ma_san_bay
+            WHERE ctsg.ma_chuyen_bay = cb.ma_chuyen_bay
+          ), '[]'::json
+        ) AS stopovers
 
       FROM chuyen_bay cb
       JOIN san_bay sb_di ON cb.san_bay_di = sb_di.ma_san_bay
@@ -2195,7 +2221,8 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
         cb.ma_chuyen_bay, cb.gia_ve, cb.ngay_gio_bay, cb.thoi_gian_bay,
         cb.san_bay_di, cb.san_bay_den, sb_di.ten_san_bay, sb_den.ten_san_bay
       ${having}
-      ORDER BY cb.ngay_gio_bay ASC
+      -- Order upcoming flights first, then departed flights last
+      ORDER BY (cb.ngay_gio_bay < NOW()) ASC, cb.ngay_gio_bay ASC
     `;
 
     const result = await pool.query(sql, params);
@@ -2280,6 +2307,20 @@ async function getFlightWithSeats(client, ma_chuyen_bay) {
         ) FILTER (WHERE chv.ma_hang_ve IS NOT NULL),
         '[]'::json
       ) AS hang_ve
+      , COALESCE(
+          (
+            SELECT JSON_AGG(JSON_BUILD_OBJECT(
+              'ma_san_bay', ctsg.ma_san_bay,
+              'ten_san_bay', sb_tg.ten_san_bay,
+              'thanh_pho', sb_tg.thanh_pho,
+              'thoi_gian_dung', ctsg.thoi_gian_dung,
+              'ghi_chu', ctsg.ghi_chu
+            ) ORDER BY ctsg.thu_tu_dung)
+            FROM chi_tiet_san_bay_trung_gian ctsg
+            LEFT JOIN san_bay sb_tg ON sb_tg.ma_san_bay = ctsg.ma_san_bay
+            WHERE ctsg.ma_chuyen_bay = cb.ma_chuyen_bay
+          ), '[]'::json
+        ) AS stopovers
     FROM chuyen_bay cb
     JOIN san_bay sb_di ON cb.san_bay_di = sb_di.ma_san_bay
     JOIN san_bay sb_den ON cb.san_bay_den = sb_den.ma_san_bay
@@ -2727,4 +2768,346 @@ app.get('/api/reports/year', verifyToken, async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
+});
+
+// ============================================
+// API: Passengers list (aggregate from giao_dich_ve + ve)
+// GET /api/passengers?search=&status=&sort=&page=&limit=
+// Returns: { passengers: [...], total }
+app.get('/api/passengers', verifyToken, async (req, res) => {
+  try {
+    const { search = '', status = '', sort = 'newest', page = '1', limit = '20' } = req.query;
+    const pageNum = Math.max(1, parseInt(page || '1'));
+    const perPage = Math.max(1, Math.min(200, parseInt(limit || '20')));
+    const offset = (pageNum - 1) * perPage;
+
+    // Build safe search
+    const searchVal = (search || '').trim();
+
+    // The query aggregates entries from giao_dich_ve (gd) and ve (v)
+    // We normalize status: map vietnamese status to canonical keys
+    const baseQuery = `
+      WITH all_entries AS (
+        SELECT
+          gd.id::text AS entry_id,
+          COALESCE(NULLIF(gd.cmnd, ''), NULLIF(gd.dien_thoai, '')) AS key_id,
+          gd.hanh_khach AS ho_ten,
+          gd.cmnd,
+          gd.dien_thoai AS sdt,
+          gd.gia_tien::numeric AS amount,
+          CASE
+            WHEN LOWER(gd.trang_thai) LIKE '%đặt%' THEN 'booked'
+            WHEN LOWER(gd.trang_thai) LIKE '%thanh toán%' OR LOWER(gd.trang_thai) LIKE '%paid%' OR LOWER(gd.trang_thai) LIKE '%bán%' THEN 'paid'
+            WHEN LOWER(gd.trang_thai) LIKE '%hủy%' THEN 'cancelled'
+            WHEN LOWER(gd.trang_thai) LIKE '%hết hạn%' THEN 'expired'
+            ELSE LOWER(gd.trang_thai)
+          END AS status,
+          gd.created_at,
+          'gd' AS source
+        FROM giao_dich_ve gd
+
+        UNION ALL
+
+        SELECT
+          v.id::text AS entry_id,
+          COALESCE(NULLIF(hk.cmnd, ''), NULLIF(hk.sdt, '')) AS key_id,
+          hk.ho_ten AS ho_ten,
+          hk.cmnd,
+          hk.sdt AS sdt,
+          v.gia_ve::numeric AS amount,
+          'paid' AS status,
+          v.created_at,
+          've' AS source
+        FROM ve v
+        LEFT JOIN hanh_khach hk ON hk.id = v.hanh_khach_id
+      ),
+      numbered AS (
+        SELECT *, COALESCE(NULLIF(key_id, ''), NULL) AS key_id_norm
+        FROM all_entries
+      ),
+      -- last status/time per key
+      last_per_key AS (
+        SELECT DISTINCT ON (key_id_norm) key_id_norm AS key_id, status AS last_status, created_at AS last_time
+        FROM numbered
+        WHERE key_id_norm IS NOT NULL
+        ORDER BY key_id_norm, created_at DESC
+      ),
+      grouped AS (
+        SELECT
+          key_id_norm AS key_id,
+          MAX(ho_ten) AS ho_ten,
+          MAX(cmnd) AS cmnd,
+          MAX(sdt) AS sdt,
+          COUNT(*) AS tickets,
+          COALESCE(SUM(CASE WHEN (source='ve' OR status='paid') THEN amount ELSE 0 END),0) AS total_spent
+        FROM numbered
+        WHERE key_id_norm IS NOT NULL
+        GROUP BY key_id_norm
+      )
+      SELECT g.key_id, g.ho_ten, g.cmnd, g.sdt, g.tickets, g.total_spent, l.last_status, l.last_time
+      FROM grouped g
+      LEFT JOIN last_per_key l ON l.key_id = g.key_id
+    `;
+
+    // Build filters
+    let whereClauses = [];
+    const params = [];
+    let idx = 1;
+
+    if (searchVal) {
+      whereClauses.push(`(LOWER(g.ho_ten) LIKE $${idx} OR g.cmnd LIKE $${idx} OR g.sdt LIKE $${idx})`);
+      params.push(`%${searchVal.toLowerCase()}%`);
+      idx++;
+    }
+
+    if (status) {
+      whereClauses.push(`(l.last_status = $${idx})`);
+      params.push(status);
+      idx++;
+    }
+
+    // We will wrap the baseQuery as a subselect to apply where/sort/pagination
+    let finalQuery = `SELECT * FROM (${baseQuery}) g`;
+
+    if (whereClauses.length > 0) {
+      finalQuery += ' WHERE ' + whereClauses.join(' AND ');
+    }
+
+    // Sorting
+    if (sort === 'name') finalQuery += ' ORDER BY g.ho_ten ASC NULLS LAST';
+    else finalQuery += ' ORDER BY g.last_time DESC NULLS LAST';
+
+    // Pagination
+    finalQuery += ` LIMIT ${perPage} OFFSET ${offset}`;
+
+    const dataRes = await pool.query(finalQuery, params);
+
+    // Total count (simple count from grouped with same filters)
+    let countQuery = `SELECT COUNT(*) AS total FROM (${baseQuery}) g`;
+    if (whereClauses.length > 0) countQuery += ' WHERE ' + whereClauses.join(' AND ');
+    const countRes = await pool.query(countQuery, params);
+
+    const rows = dataRes.rows.map(r => ({
+      id: r.key_id,
+      ho_ten: r.ho_ten,
+      cmnd: r.cmnd,
+      sdt: r.sdt,
+      tickets: parseInt(r.tickets) || 0,
+      total_spent: Number(r.total_spent) || 0,
+      last_status: r.last_status || null,
+      last_time: r.last_time || null
+    }));
+
+    res.json({ passengers: rows, total: Number(countRes.rows[0].total) || 0 });
+  } catch (e) {
+    console.error('GET /api/passengers error:', e);
+    res.status(500).json({ error: e.message || 'Lỗi server' });
+  }
+});
+
+// ============================================
+// API: transactions for a passenger
+// GET /api/passengers/:key/transactions
+app.get('/api/passengers/:key/transactions', verifyToken, async (req, res) => {
+  try {
+    const key = String(req.params.key || '').trim();
+    if (!key) return res.status(400).json({ error: 'Missing key' });
+
+    console.log('DEBUG GET /api/passengers/:key/transactions key=', key);
+
+    const q = `
+      WITH gd AS (
+        SELECT id::text AS id, ma_chuyen_bay, gia_tien::numeric AS amount, 
+               CASE
+                 WHEN LOWER(trang_thai) LIKE '%đặt%' THEN 'booked'
+                 WHEN LOWER(trang_thai) LIKE '%thanh toán%' OR LOWER(trang_thai) LIKE '%paid%' OR LOWER(trang_thai) LIKE '%bán%' THEN 'paid'
+                 WHEN LOWER(trang_thai) LIKE '%hủy%' THEN 'cancelled'
+                 WHEN LOWER(trang_thai) LIKE '%hết hạn%' THEN 'expired'
+                 ELSE LOWER(trang_thai)
+               END AS status,
+               created_at, 'giao_dich_ve' AS source
+        FROM giao_dich_ve
+        WHERE cmnd = $1 OR dien_thoai = $1
+      ),
+      v AS (
+        SELECT v.id::text AS id, v.ma_chuyen_bay, v.gia_ve::numeric AS amount, 'paid' AS status, v.created_at, 've' AS source
+        FROM ve v
+        LEFT JOIN hanh_khach hk ON hk.id = v.hanh_khach_id
+        WHERE hk.cmnd = $1 OR hk.sdt = $1 OR v.hanh_khach_id::text = $1
+      ),
+      allt AS (
+        SELECT * FROM gd
+        UNION ALL
+        SELECT * FROM v
+      )
+      SELECT at.id, at.ma_chuyen_bay, at.amount, at.status, at.created_at, at.source, cb.ngay_gio_bay
+      FROM allt at
+      LEFT JOIN chuyen_bay cb ON cb.ma_chuyen_bay = at.ma_chuyen_bay
+      ORDER BY at.created_at DESC
+    `;
+
+    const data = await pool.query(q, [key]);
+    console.log('DEBUG /api/passengers/:key/transactions -> rows count =', (data.rows || []).length);
+
+    const rows = (data.rows || []).map(r => ({
+      id: r.id,
+      flight_code: r.ma_chuyen_bay,
+      flight_date: r.ngay_gio_bay,
+      amount: Number(r.amount || 0),
+      status: r.status,
+      source: r.source,
+      created_at: r.created_at
+    }));
+
+    res.json({ transactions: rows });
+  } catch (e) {
+    console.error('GET /api/passengers/:key/transactions error:', e);
+    res.status(500).json({ error: e.message || 'Lỗi server' });
+  }
+});
+
+// Create passenger
+app.post('/api/passengers', verifyToken, async (req, res) => {
+  try {
+    const { ho_ten, cmnd, sdt } = req.body || {};
+    if (!ho_ten) return res.status(400).json({ error: 'Missing ho_ten' });
+
+    const q = `INSERT INTO hanh_khach (ho_ten, cmnd, sdt, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *`;
+    const r = await pool.query(q, [ho_ten, cmnd || null, sdt || null]);
+    res.json({ passenger: r.rows[0] });
+  } catch (e) {
+    console.error('POST /api/passengers error:', e);
+    res.status(500).json({ error: e.message || 'Lỗi server' });
+  }
+});
+
+// Update passenger by id or key (cmnd or sdt)
+app.put('/api/passengers/:key', verifyToken, async (req, res) => {
+  try {
+    const key = String(req.params.key || '').trim();
+    const { ho_ten, cmnd, sdt } = req.body || {};
+    if (!key) return res.status(400).json({ error: 'Missing key' });
+    // Distinguish between DB numeric id and CMND/SĐT which are also numeric strings.
+    // Treat as DB id only if it's a short numeric value (e.g. <= 6 digits).
+    const isNumericId = (/^\d+$/.test(key) && key.length <= 6);
+
+    // 1) Find existing hanh_khach if any (to get old cmnd/sdt for ripple updates)
+    let hkBefore = null;
+    if (isNumericId) {
+      const r0 = await pool.query('SELECT * FROM hanh_khach WHERE id=$1', [parseInt(key)]);
+      hkBefore = r0.rows[0] || null;
+    } else {
+      const r0 = await pool.query('SELECT * FROM hanh_khach WHERE cmnd=$1 OR sdt=$1 LIMIT 1', [key]);
+      hkBefore = r0.rows[0] || null;
+    }
+
+    // 2) Update or insert hanh_khach
+    let hk = null;
+    if (hkBefore) {
+      const r = await pool.query(
+        `UPDATE hanh_khach SET ho_ten = $1, cmnd = $2, sdt = $3 WHERE id = $4 RETURNING *`,
+        [ho_ten || hkBefore.ho_ten, cmnd || hkBefore.cmnd, sdt || hkBefore.sdt, hkBefore.id]
+      );
+      hk = r.rows[0];
+    } else {
+      const insertQ = `INSERT INTO hanh_khach (ho_ten, cmnd, sdt, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *`;
+      const insertVals = [ho_ten || null, cmnd || (isNumericId ? null : key) || null, sdt || (isNumericId ? null : key) || null];
+      const ins = await pool.query(insertQ, insertVals);
+      hk = ins.rows[0];
+    }
+
+    // 3) Ripple updates to giao_dich_ve so the stored cmnd/dien_thoai/hanh_khach text also reflect changes
+    const oldCmnd = hkBefore && hkBefore.cmnd ? hkBefore.cmnd : null;
+    const oldSdt = hkBefore && hkBefore.sdt ? hkBefore.sdt : null;
+    const routeKey = key;
+
+    try {
+      // Only sync text snapshot for bookings (dat_cho) to avoid overwriting historical sold tickets
+      await pool.query(
+        `UPDATE giao_dich_ve SET hanh_khach = $1, cmnd = $2, dien_thoai = $3
+         WHERE ( (cmnd IS NOT NULL AND (cmnd = $4 OR cmnd = $7))
+                 OR (dien_thoai IS NOT NULL AND (dien_thoai = $5 OR dien_thoai = $7))
+                 OR (cmnd IS NULL AND dien_thoai IS NULL AND (cmnd = $7 OR dien_thoai = $7)) )
+           AND (loai = 'dat_cho' OR trang_thai = 'Đặt chỗ')`,
+        [hk ? hk.ho_ten : ho_ten, hk ? hk.cmnd : cmnd, hk ? hk.sdt : sdt, oldCmnd, oldSdt, routeKey, routeKey]
+      );
+    } catch (err) {
+      console.warn('Ripple update giao_dich_ve (bookings only) failed:', err.message);
+    }
+
+    // 4) Try linking ve rows that weren't linked to hanh_khach (if any) to the hk we just created/updated
+    if (!hkBefore && hk && (hk.cmnd || hk.sdt)) {
+      try {
+        await pool.query(
+          `UPDATE ve SET hanh_khach_id = $1
+           FROM hanh_khach hk2
+           WHERE ve.hanh_khach_id IS NULL AND (hk2.cmnd = $2 OR hk2.sdt = $3) AND hk2.id = $1`,
+          [hk.id, hk.cmnd, hk.sdt]
+        );
+      } catch (err) {
+        console.warn('Attempt to link ve to new hanh_khach failed:', err.message);
+      }
+    }
+
+    return res.json({ passenger: hk, created: !hkBefore });
+  } catch (e) {
+    console.error('PUT /api/passengers/:key error:', e);
+    res.status(500).json({ error: e.message || 'Lỗi server' });
+  }
+});
+
+// Delete passenger by id or key (cmnd or sdt)
+app.delete('/api/passengers/:key', verifyToken, async (req, res) => {
+  try {
+    const key = String(req.params.key || '').trim();
+    if (!key) return res.status(400).json({ error: 'Missing key' });
+
+    const isNumericId = (/^\d+$/.test(key) && key.length <= 6);
+
+    // Find existing hanh_khach (if any) to know old cmnd/sdt
+    let hkBefore = null;
+    if (isNumericId) {
+      const r0 = await pool.query('SELECT * FROM hanh_khach WHERE id=$1', [parseInt(key)]);
+      hkBefore = r0.rows[0] || null;
+    } else {
+      const r0 = await pool.query('SELECT * FROM hanh_khach WHERE cmnd=$1 OR sdt=$1 LIMIT 1', [key]);
+      hkBefore = r0.rows[0] || null;
+    }
+
+    const oldCmnd = hkBefore && hkBefore.cmnd ? hkBefore.cmnd : null;
+    const oldSdt = hkBefore && hkBefore.sdt ? hkBefore.sdt : null;
+    const routeKey = key;
+
+    // Anonymize hanh_khach if exists
+    if (hkBefore) {
+      await pool.query(`UPDATE hanh_khach SET ho_ten = '[Đã xóa]', cmnd = NULL, sdt = NULL WHERE id = $1`, [hkBefore.id]);
+    }
+
+    // Clear sensitive fields in giao_dich_ve for matching rows
+    try {
+      await pool.query(
+        `UPDATE giao_dich_ve SET hanh_khach = '[Đã xóa]', cmnd = NULL, dien_thoai = NULL
+         WHERE (cmnd IS NOT NULL AND (cmnd = $1 OR cmnd = $4))
+            OR (dien_thoai IS NOT NULL AND (dien_thoai = $2 OR dien_thoai = $4))
+            OR (cmnd IS NULL AND dien_thoai IS NULL AND (cmnd = $4 OR dien_thoai = $4))`,
+        [oldCmnd, oldSdt, hkBefore ? hkBefore.id : null, routeKey]
+      );
+    } catch (err) {
+      console.warn('Anonymize giao_dich_ve failed:', err.message);
+    }
+
+    // For ve table, try to nullify hanh_khach_id if it points to this passenger (may fail if FK prevents it)
+    if (hkBefore) {
+      try {
+        await pool.query('UPDATE ve SET hanh_khach_id = NULL WHERE hanh_khach_id = $1', [hkBefore.id]);
+      } catch (err) {
+        console.warn('Failed to nullify ve.hanh_khach_id:', err.message);
+      }
+    }
+
+    return res.json({ success: true, anonymized: true });
+  } catch (e) {
+    console.error('DELETE /api/passengers/:key error:', e);
+    res.status(500).json({ error: e.message || 'Lỗi server' });
+  }
 });

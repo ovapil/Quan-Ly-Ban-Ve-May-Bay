@@ -58,8 +58,45 @@ async function loadAirports() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  loadAirports();
-  
+  (async () => {
+    await loadAirports();
+
+    // After airports loaded, check URL params to prefill and auto-search
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      const flightId = qs.get('flightId') || '';
+      const from = qs.get('from') || '';
+      const to = qs.get('to') || '';
+      const date = qs.get('date') || '';
+
+      if (from) document.getElementById('fromAirport').value = from;
+      if (to) document.getElementById('toAirport').value = to;
+      if (date) document.getElementById('flightDate').value = date;
+
+      if (from || to || date || flightId) {
+        // auto search
+        try {
+          await loadFlightsFromApi(true, false);
+          if (flightId) {
+            const found = flights.find(f => String(f.flight_code) === String(flightId));
+            if (found) {
+              selected = found;
+              applySelected();
+              UI.toast(`Đã chọn chuyến ${found.flight_code}`, 'success');
+            } else {
+              UI.toast('Không tìm thấy chuyến theo mã chuyến được cung cấp', 'warn');
+            }
+          }
+        } catch (e) {
+          console.warn('Auto search failed', e);
+          UI.toast('Không thể tìm chuyến (lỗi kết nối)', 'error');
+        }
+      }
+    } catch (e) {
+      console.warn('Prefill booking params failed', e);
+    }
+  })();
+
   // Back button handler
   const btnBack = document.getElementById("btnBackTop");
   if (btnBack) {

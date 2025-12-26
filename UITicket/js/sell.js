@@ -352,7 +352,50 @@ minutesToText(min) {
   this.setFlightsVisible(false);
 
   // Chỉ load danh sách sân bay; không auto-fetch chuyến bay
-  this.seedFilters().catch((e) => {
+  this.seedFilters().then(() => {
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      const flightId = qs.get('flightId') || '';
+      const from = qs.get('from') || '';
+      const to = qs.get('to') || '';
+      const date = qs.get('date') || '';
+
+      // If any of these params exist, prefill the form and auto-search
+      if (from) this.el.fromAirport.value = from;
+      if (to) this.el.toAirport.value = to;
+      if (date) this.el.departDate.value = date;
+
+      if (from || to || date || flightId) {
+        // perform search and then auto-select the matching flight if flightId provided
+        this.hasSearchedFlights = true;
+        this.applyFilter().then(() => {
+          // If no flights returned, show explicit 'not found' state and do NOT use sample data
+          if (!this.filtered || this.filtered.length === 0) {
+            UI.toast('Không tìm thấy chuyến bay phù hợp', 'warn');
+            this.setFlightsVisible(false);
+            return;
+          }
+
+          if (flightId) {
+            const found = this.filtered.find(f => String(f.code) === String(flightId));
+            if (found) {
+              this.selected = found;
+              this.applySelected();
+              UI.toast(`Đã chọn chuyến ${found.code}`, 'success');
+            } else {
+              // flightId provided but not found in results
+              UI.toast('Không tìm thấy chuyến theo mã chuyến được cung cấp', 'warn');
+            }
+          }
+        }).catch((e) => {
+          console.warn('Auto-search failed', e);
+          UI.toast('Không thể tìm chuyến (lỗi kết nối)', 'error');
+        });
+      }
+    } catch (e) {
+      console.warn('Prefill from query failed', e);
+    }
+  }).catch((e) => {
     console.warn("seedFilters failed", e);
   });
 
