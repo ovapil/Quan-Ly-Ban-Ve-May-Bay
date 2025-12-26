@@ -2472,6 +2472,255 @@ app.get('/api/tickets', verifyToken, async (req, res) => {
 });
 
 // ============================================
+// REPORT API - Lập báo cáo (Theo tháng / Theo năm)
+// ✅ Doanh thu CHỈ tính từ bảng VE (vé đã bán). KHÔNG cộng tiền phiếu đặt chỗ.
+// Endpoints:
+//   GET /api/reports/month?month=YYYY-MM&status=paid|all
+//   GET /api/reports/year?year=YYYY&status=paid|all
+// ============================================
+
+function parseMonthRange(monthStr) {
+  const m = String(monthStr || '').trim();
+  if (!/^\d{4}-\d{2}$/.test(m)) return null;
+  const [y, mm] = m.split('-').map(Number);
+  if (!y || !mm || mm < 1 || mm > 12) return null;
+  const start = `${String(y).padStart(4, '0')}-${String(mm).padStart(2, '0')}-01`;
+  const nextY = mm === 12 ? y + 1 : y;
+  const nextM = mm === 12 ? 1 : mm + 1;
+  const end = `${String(nextY).padStart(4, '0')}-${String(nextM).padStart(2, '0')}-01`;
+  return { month: m, start, end };
+}
+
+function parseYearRange(yearStr) {
+  const y = String(yearStr || '').trim();
+  if (!/^\d{4}$/.test(y)) return null;
+  const yr = Number(y);
+  if (!Number.isFinite(yr) || yr < 2000 || yr > 2100) return null;
+  const start = `${y}-01-01`;
+  const end = `${String(yr + 1).padStart(4, '0')}-01-01`;
+  return { year: y, start, end };
+}
+
+// --------------------------------------------
+// GET /api/reports/month
+// --------------------------------------------
+app.get('/api/reports/month', verifyToken, async (req, res) => {
+  const range = parseMonthRange(req.query.month);
+  const status = String(req.query.status || 'paid').trim(); // paid|all
+  if (!range) return res.status(400).json({ error: 'month phải có dạng YYYY-MM' });
+  if (!['paid', 'all'].includes(status)) return res.status(400).json({ error: "status phải là 'paid' hoặc 'all'" });
+
+  const client = await pool.connect();
+  try {
+    const baseFlights = `
+      SELECT cb.ma_chuyen_bay::text AS flight_code,
+             cb.san_bay_di::text AS from_code,
+             cb.san_bay_den::text AS to_code,
+             sb_di.ten_san_bay AS from_name,
+             sb_den.ten_san_bay AS to_name,
+             cb.ngay_gio_bay AS depart_at
+      FROM chuyen_bay cb
+      LEFT JOIN san_bay sb_di ON sb_di.ma_san_bay = cb.san_bay_di
+      LEFT JOIN san_bay sb_den ON sb_den.ma_san_bay = cb.san_bay_den
+    `;
+
+    let sql = '';
+    if (status === 'paid') {
+      sql = `
+        WITH sold AS (
+          SELECT v.ma_chuyen_bay::text AS flight_code,
+                 COUNT(*)::int AS tickets_sold,
+                 COALESCE(SUM(v.gia_ve), 0)::bigint AS revenue
+          FROM ve v
+          WHERE (v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') >= $1::date
+            AND (v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') <  $2::date
+          GROUP BY 1
+        )
+        SELECT f.flight_code, f.from_code, f.to_code, f.from_name, f.to_name, f.depart_at,
+               s.tickets_sold, s.revenue,
+               0::int AS booked_total, 0::int AS booked_active, 0::int AS booked_cancelled, 0::int AS booked_expired
+        FROM sold s
+        LEFT JOIN (${baseFlights}) f
+          ON f.flight_code = s.flight_code
+        ORDER BY s.revenue DESC, s.tickets_sold DESC, s.flight_code ASC;
+      `;
+    } else {
+      sql = `
+        WITH sold AS (
+          SELECT v.ma_chuyen_bay::text AS flight_code,
+                 COUNT(*)::int AS tickets_sold,
+                 COALESCE(SUM(v.gia_ve), 0)::bigint AS revenue
+          FROM ve v
+          WHERE (v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') >= $1::date
+            AND (v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') <  $2::date
+          GROUP BY 1
+        ),
+        booked AS (
+          SELECT gdv.ma_chuyen_bay::text AS flight_code,
+                 COUNT(*)::int AS booked_total,
+                 COUNT(*) FILTER (WHERE gdv.trang_thai = 'Đặt chỗ')::int AS booked_active,
+                 COUNT(*) FILTER (WHERE gdv.trang_thai = 'Đã hủy')::int AS booked_cancelled,
+                 COUNT(*) FILTER (WHERE gdv.trang_thai = 'Hết hạn')::int AS booked_expired
+          FROM giao_dich_ve gdv
+          WHERE gdv.loai = 'dat_cho'
+            AND (gdv.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') >= $1::date
+            AND (gdv.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') <  $2::date
+          GROUP BY 1
+        ),
+        keys AS (
+          SELECT flight_code FROM sold
+          UNION
+          SELECT flight_code FROM booked
+        )
+        SELECT f.flight_code, f.from_code, f.to_code, f.from_name, f.to_name, f.depart_at,
+               COALESCE(s.tickets_sold,0)::int AS tickets_sold,
+               COALESCE(s.revenue,0)::bigint AS revenue,
+               COALESCE(b.booked_total,0)::int AS booked_total,
+               COALESCE(b.booked_active,0)::int AS booked_active,
+               COALESCE(b.booked_cancelled,0)::int AS booked_cancelled,
+               COALESCE(b.booked_expired,0)::int AS booked_expired
+        FROM keys k
+        LEFT JOIN (${baseFlights}) f
+          ON f.flight_code = k.flight_code
+        LEFT JOIN sold s
+          ON s.flight_code = k.flight_code
+        LEFT JOIN booked b
+          ON b.flight_code = k.flight_code
+        ORDER BY revenue DESC, tickets_sold DESC, f.flight_code ASC;
+      `;
+    }
+
+    const r = await client.query(sql, [range.start, range.end]);
+    const items = r.rows || [];
+
+    const revenue = items.reduce((s, it) => s + Number(it.revenue || 0), 0);
+    const tickets_sold = items.reduce((s, it) => s + Number(it.tickets_sold || 0), 0);
+    const booked_total = items.reduce((s, it) => s + Number(it.booked_total || 0), 0);
+
+    res.json({
+      type: 'month',
+      month: range.month,
+      status,
+      range: { start: range.start, end: range.end },
+      summary: {
+        revenue,
+        tickets_sold,
+        booked_total,
+        flights_count: items.length,
+        right_value: items.length,
+      },
+      items,
+    });
+  } catch (e) {
+    console.error('GET /api/reports/month error:', e);
+    res.status(500).json({ error: e.message || 'Lỗi server' });
+  } finally {
+    client.release();
+  }
+});
+
+// --------------------------------------------
+// GET /api/reports/year
+// --------------------------------------------
+app.get('/api/reports/year', verifyToken, async (req, res) => {
+  const range = parseYearRange(req.query.year);
+  const status = String(req.query.status || 'paid').trim(); // paid|all
+  if (!range) return res.status(400).json({ error: 'year phải có dạng YYYY' });
+  if (!['paid', 'all'].includes(status)) return res.status(400).json({ error: "status phải là 'paid' hoặc 'all'" });
+
+  const client = await pool.connect();
+  try {
+    let sql = '';
+    if (status === 'paid') {
+      sql = `
+        WITH sold AS (
+          SELECT to_char(date_trunc('month', v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), 'YYYY-MM') AS month,
+                 COUNT(*)::int AS tickets_sold,
+                 COALESCE(SUM(v.gia_ve), 0)::bigint AS revenue
+          FROM ve v
+          WHERE (v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') >= $1::date
+            AND (v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') <  $2::date
+          GROUP BY 1
+        )
+        SELECT month,
+               tickets_sold,
+               revenue,
+               0::int AS booked_total, 0::int AS booked_active, 0::int AS booked_cancelled, 0::int AS booked_expired
+        FROM sold
+        ORDER BY month ASC;
+      `;
+    } else {
+      sql = `
+        WITH sold AS (
+          SELECT to_char(date_trunc('month', v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), 'YYYY-MM') AS month,
+                 COUNT(*)::int AS tickets_sold,
+                 COALESCE(SUM(v.gia_ve), 0)::bigint AS revenue
+          FROM ve v
+          WHERE (v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') >= $1::date
+            AND (v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') <  $2::date
+          GROUP BY 1
+        ),
+        booked AS (
+          SELECT to_char(date_trunc('month', gdv.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh'), 'YYYY-MM') AS month,
+                 COUNT(*)::int AS booked_total,
+                 COUNT(*) FILTER (WHERE gdv.trang_thai = 'Đặt chỗ')::int AS booked_active,
+                 COUNT(*) FILTER (WHERE gdv.trang_thai = 'Đã hủy')::int AS booked_cancelled,
+                 COUNT(*) FILTER (WHERE gdv.trang_thai = 'Hết hạn')::int AS booked_expired
+          FROM giao_dich_ve gdv
+          WHERE gdv.loai = 'dat_cho'
+            AND (gdv.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') >= $1::date
+            AND (gdv.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') <  $2::date
+          GROUP BY 1
+        ),
+        keys AS (
+          SELECT month FROM sold
+          UNION
+          SELECT month FROM booked
+        )
+        SELECT k.month,
+               COALESCE(s.tickets_sold,0)::int AS tickets_sold,
+               COALESCE(s.revenue,0)::bigint AS revenue,
+               COALESCE(b.booked_total,0)::int AS booked_total,
+               COALESCE(b.booked_active,0)::int AS booked_active,
+               COALESCE(b.booked_cancelled,0)::int AS booked_cancelled,
+               COALESCE(b.booked_expired,0)::int AS booked_expired
+        FROM keys k
+        LEFT JOIN sold s ON s.month = k.month
+        LEFT JOIN booked b ON b.month = k.month
+        ORDER BY k.month ASC;
+      `;
+    }
+
+    const r = await client.query(sql, [range.start, range.end]);
+    const items = r.rows || [];
+
+    const revenue = items.reduce((s, it) => s + Number(it.revenue || 0), 0);
+    const tickets_sold = items.reduce((s, it) => s + Number(it.tickets_sold || 0), 0);
+    const booked_total = items.reduce((s, it) => s + Number(it.booked_total || 0), 0);
+
+    res.json({
+      type: 'year',
+      year: range.year,
+      status,
+      range: { start: range.start, end: range.end },
+      summary: {
+        revenue,
+        tickets_sold,
+        booked_total,
+        months_count: items.length,
+        right_value: items.length,
+      },
+      items,
+    });
+  } catch (e) {
+    console.error('GET /api/reports/year error:', e);
+    res.status(500).json({ error: e.message || 'Lỗi server' });
+  } finally {
+    client.release();
+  }
+});
+
+// ============================================
 // START SERVER
 // ============================================
 

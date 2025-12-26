@@ -1,289 +1,189 @@
-/* ============================================
-   REPORT.CSS - Lập báo cáo (Theo tháng / Theo năm)
-   Mục tiêu: giống style UITicket (bo tròn, xanh - trắng),
-   nhưng tự chứa (không phụ thuộc booking/sell/schedule css).
-   ============================================ */
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UITicket - Lập báo cáo</title>
 
-.report-page{
-  padding-bottom: 40px;
-}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Asap:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
-.report-shell{
-  width: 100%;
-}
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/report.css" />
+</head>
 
-.report-title{
-  text-align:center;
-  font-family: "Asap", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  font-weight: 800;
-  letter-spacing: 1px;
-  font-size: clamp(30px, 3.1vw, 46px);
-  color: #5D79E6;
-  margin: 6px 0 18px;
-}
+<body class="app-mode">
+  <div id="toast">Thông báo</div>
 
-.report-card{
-  position: relative;
-  border-radius: 26px;
-  background: #EEF2FF;
-  box-shadow: var(--shadow);
-  padding: 22px;
-  overflow: hidden;
-}
+  <!-- HEADER đồng bộ các trang khác -->
+  <header class="app-header">
+    <div class="bar">
+      <div class="brand">
+        <img class="brand-logo-img" src="assets/images/logo.png" alt="UITicket Logo" />
+        <div class="name">
+          <div class="title">UITicket</div>
+          <div class="slogan">Buy&Fly. Catch your sky!</div>
+        </div>
+      </div>
 
-/* ===== Forms ===== */
-.field{ display:flex; flex-direction:column; gap:6px; }
-.field.inline{ flex-direction:column; }
-.field.inline.grow{ flex: 1; }
+      <nav class="nav-tabs" aria-label="Main Navigation">
+        <button class="tab active" id="tabHome">Trang chủ</button>
+        <button class="tab" id="tabAccount">Tài khoản</button>
+        <button class="tab" id="tabSettings">Cài đặt</button>
+      </nav>
 
-.field label{
-  font-weight: 700;
-  color: #3552B6;
-  font-size: 14px;
-}
+      <div class="actions">
+        <button class="icon-btn" aria-label="Notifications" id="btnNoti">
+          <i class="fa-regular fa-bell"></i>
+          <span class="badge" id="notifBadge">1</span>
+        </button>
+        <button class="icon-btn" aria-label="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
 
-.input{
-  height: 44px;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  padding: 0 14px;
-  background: #fff;
-  color: #0B1B6F;
-  outline: none;
-  transition: box-shadow .15s ease, border-color .15s ease;
-}
+  <main class="page report-page">
+    <section class="report-shell">
+      <h1 class="report-title">LẬP BÁO CÁO</h1>
 
-select.input{ padding-right: 42px; }
+      <div class="report-card">
+        <!-- Bộ lọc chính -->
+        <div class="report-filter-row">
+          <div class="field">
+            <label>Loại báo cáo</label>
+            <select class="input" id="reportType">
+              <option value="month" selected>Báo cáo theo tháng</option>
+              <option value="year">Báo cáo theo năm</option>
+            </select>
+          </div>
 
-.input:focus{
-  border-color: rgba(46, 74, 168, .65);
-  box-shadow: 0 0 0 4px rgba(46, 74, 168, .12);
-}
+          <div class="field" id="yearWrap">
+            <label>Năm</label>
+            <input class="input" id="yearInput" type="number" min="2000" max="2100" placeholder="VD: 2024" />
+          </div>
 
-/* ===== Buttons ===== */
-.btns{
-  display:flex;
-  gap: 10px;
-  align-items:flex-end;
-  justify-content:flex-end;
-}
+          <div class="field" id="monthWrap">
+            <label>Tháng</label>
+            <input class="input" id="monthInput" type="month" />
+          </div>
 
-.btn{
-  height: 44px;
-  border-radius: 999px;
-  border: 1px solid #dbe3f6;
-  background: #fff;
-  color: #0B1B6F;
-  padding: 0 18px;
-  font-weight: 800;
-  cursor: pointer;
-  display: inline-flex;
-  gap: 10px;
-  align-items:center;
-  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.06);
-  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
-}
+          <div class="btns">
+            <button class="btn primary" id="btnGenerate">
+              <i class="fa-solid fa-chart-column"></i>
+              Báo cáo
+            </button>
 
-.btn:hover{ transform: translateY(-1px); box-shadow: 0 12px 26px rgba(17,24,39,0.10); }
-.btn:active{ transform: translateY(0); }
+            <div class="btn-split">
+              <button class="btn" id="btnExport" title="Xuất báo cáo">
+                <i class="fa-solid fa-file-arrow-down"></i>
+                Xuất
+              </button>
+              <button class="btn caret" id="btnExportCaret" aria-label="Export menu">
+                <i class="fa-solid fa-caret-down"></i>
+              </button>
+              <div class="split-menu hidden" id="exportMenu">
+                <button type="button" class="menu-item" data-export="csv">Xuất CSV</button>
+                <button type="button" class="menu-item" data-export="print">In</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
-.btn.primary{
-  background: linear-gradient(135deg, #2E4AA8 0%, #27449C 100%);
-  color: #fff;
-  border-color: transparent;
-}
+        <!-- Bộ lọc phụ -->
+        <div class="report-subfilter">
+          <div class="field inline">
+            <label>Trạng thái (tuỳ chọn)</label>
+            <select class="input" id="statusFilter">
+              <option value="paid" selected>Chỉ tính đã thanh toán</option>
+              <option value="all">Tất cả trạng thái</option>
+            </select>
+          </div>
 
-.btn.caret{
-  width: 44px;
-  padding: 0;
-  justify-content:center;
-}
+          <div class="field inline grow">
+            <label id="quickLabel">Tìm nhanh chuyến bay</label>
+            <input class="input" id="quickSearch" placeholder="VD: VN123" />
+          </div>
 
-/* ===== Filter rows ===== */
-.report-filter-row{
-  display:grid;
-  grid-template-columns: 260px 220px 220px 1fr;
-  gap: 16px;
-  align-items:end;
-}
+          <div class="field inline">
+            <label>&nbsp;</label>
+            <button class="btn" id="btnReset" type="button">
+              <i class="fa-solid fa-rotate-right"></i>
+              Làm mới
+            </button>
+          </div>
+        </div>
 
-@media (max-width: 1100px){
-  .report-filter-row{
-    grid-template-columns: 1fr;
-  }
-  .btns{ justify-content:flex-start; flex-wrap:wrap; }
-}
+        <!-- Thẻ tóm tắt -->
+        <div class="summary">
+          <div class="sum-card">
+            <div class="sum-ico"><i class="fa-solid fa-sack-dollar"></i></div>
+            <div class="sum-meta">
+              <div class="sum-k">Tổng doanh thu</div>
+              <div class="sum-v" id="sumRevenue">—</div>
+            </div>
+          </div>
 
-.report-subfilter{
-  display:flex;
-  gap: 16px;
-  align-items:end;
-  margin-top: 14px;
-}
+          <div class="sum-card" id="sumMidCard">
+            <div class="sum-ico"><i class="fa-solid fa-ticket"></i></div>
+            <div class="sum-meta">
+              <div class="sum-k" id="sumMidLabel">Tổng số vé</div>
+              <div class="sum-v" id="sumMidValue">—</div>
+            </div>
+          </div>
 
-@media (max-width: 1100px){
-  .report-subfilter{ flex-direction:column; align-items:stretch; }
-}
+          <div class="sum-card" id="sumRightCard">
+            <div class="sum-ico"><i class="fa-solid fa-plane"></i></div>
+            <div class="sum-meta">
+              <div class="sum-k" id="sumRightLabel">Số chuyến bay</div>
+              <div class="sum-v" id="sumRightValue">—</div>
+            </div>
+          </div>
+        </div>
 
-/* ===== Split export menu ===== */
-.btn-split{ position: relative; display:flex; gap: 8px; }
+        <!-- Biểu đồ (doanh thu) -->
+        <div class="chart-wrap">
+          <div class="chart-head">
+            <div class="chart-title" id="chartTitle">Biểu đồ doanh thu</div>
+            <div class="chart-sub" id="chartSub">Chưa có dữ liệu</div>
+          </div>
 
-.split-menu{
-  position:absolute;
-  right: 0;
-  top: calc(100% + 10px);
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  box-shadow: 0 18px 40px rgba(17,24,39,0.14);
-  min-width: 180px;
-  overflow: hidden;
-  z-index: 30;
-}
+          <div class="chart-canvas">
+            <canvas id="reportChart" width="1200" height="360"></canvas>
+          </div>
+        </div>
 
-.split-menu.hidden{ display:none; }
+        <!-- Bảng kết quả -->
+        <div class="table-wrap">
+          <div class="table-head">
+            <div class="table-title" id="tableTitle">Báo cáo theo tháng</div>
+            <div class="table-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input class="input" id="tableSearch" placeholder="Lọc bảng..." />
+            </div>
+          </div>
 
-.menu-item{
-  width: 100%;
-  padding: 12px 14px;
-  border: none;
-  background: #fff;
-  cursor: pointer;
-  font-weight: 700;
-  color: #0B1B6F;
-  text-align:left;
-}
+          <div class="table" id="reportTable">
+            <!-- JS render -->
+            <div class="empty" id="emptyState">
+              Chọn thời gian và bấm <b>Báo cáo</b> để xem dữ liệu.
+            </div>
+          </div>
+        </div>
 
-.menu-item:hover{ background: #F1F5FF; }
+        <!-- Back button (góc trái dưới) -->
+        <button class="back-fab" id="btnBack" title="Quay lại">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+      </div>
+    </section>
+  </main>
 
-/* ===== Summary cards ===== */
-.summary{
-  margin-top: 18px;
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-@media (max-width: 1100px){
-  .summary{ grid-template-columns: 1fr; }
-}
-
-.sum-card{
-  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.75) 100%);
-  border: 1px solid rgba(219, 227, 246, 0.9);
-  border-radius: 18px;
-  padding: 16px;
-  display:flex;
-  gap: 12px;
-  align-items:center;
-}
-
-.sum-ico{
-  width: 44px; height: 44px;
-  border-radius: 14px;
-  background: rgba(46, 74, 168, .12);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color: var(--primary);
-  flex: 0 0 44px;
-}
-
-.sum-k{ font-weight: 800; color: #3552B6; font-size: 13px; }
-.sum-v{ font-weight: 900; color: var(--text); font-size: 20px; margin-top: 4px; }
-
-/* ===== Table ===== */
-.table-wrap{
-  margin-top: 16px;
-  background: rgba(255,255,255,0.84);
-  border: 1px solid rgba(219, 227, 246, 0.9);
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.table-head{
-  padding: 14px 14px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 12px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.table-title{
-  font-weight: 900;
-  color: #3552B6;
-}
-
-.table-search{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-}
-
-.table-search .input{
-  height: 40px;
-  width: min(320px, 56vw);
-}
-
-.table{
-  padding: 0;
-}
-
-.empty{
-  padding: 24px;
-  text-align:center;
-  color: #64748b;
-}
-
-.tbl{
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.tbl th, .tbl td{
-  padding: 12px 14px;
-  border-bottom: 1px solid #eef2f7;
-  font-size: 14px;
-}
-
-.tbl th{
-  text-align:left;
-  color: #3552B6;
-  font-weight: 900;
-  background: #F6F8FF;
-}
-
-.tbl td{ color: #0B1B6F; font-weight: 650; }
-
-.tbl tr:hover td{ background: rgba(46, 74, 168, 0.04); }
-
-.t-right{ text-align:right; }
-.t-center{ text-align:center; }
-
-.tbl tfoot td{
-  font-weight: 900;
-  background: #FBFCFF;
-}
-
-/* ===== Back button ===== */
-.back-fab{
-  position: absolute;
-  left: 18px;
-  bottom: 16px;
-  width: 46px;
-  height: 46px;
-  border-radius: 16px;
-  border: none;
-  cursor: pointer;
-  background: rgba(46, 74, 168, 0.12);
-  color: var(--primary);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow: 0 12px 26px rgba(17,24,39,0.10);
-  transition: transform .15s ease, background .15s ease;
-}
-
-.back-fab:hover{ transform: translateY(-1px); background: rgba(46, 74, 168, 0.18); }
-.back-fab:active{ transform: translateY(0); }
+  <script src="js/report.js"></script>
+</body>
+</html>

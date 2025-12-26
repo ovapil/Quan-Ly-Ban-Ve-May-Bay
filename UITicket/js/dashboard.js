@@ -165,7 +165,8 @@ const Dashboard = {
     }
 
     if (key === "report") {
-      window.location.href = "sell.html";
+      // ✅ FIX: Lập báo cáo phải mở report.html, không phải trang bán vé
+      window.location.href = "report.html";
       return;
     }
 
