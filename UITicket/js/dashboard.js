@@ -158,8 +158,8 @@ if (key === "schedule") {
   window.location.href = "schedule.html?preview=1";
   return;
 }
-if (key === "report") {
-  window.location.href = "report.html";
+if (key === "booking") {
+  window.location.href = "booking.html?preview=1";
   return;
 }
 
