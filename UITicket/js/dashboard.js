@@ -175,7 +175,7 @@ const Dashboard = {
     }
 
     if (key === "sell") {
-      window.location.href = "sell.html";
+      window.location.href = "sell_page.html";
       return;
     }
 
