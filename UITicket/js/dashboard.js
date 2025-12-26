@@ -147,46 +147,50 @@ const Dashboard = {
   },
 
   tileClick(key) {
-
     const user = JSON.parse(localStorage.getItem('uiticket_user') || '{"role":"User"}');
 
     if (key === "info" && user.role !== "Admin") {
       UI.toast("❌ Không đủ quyền", "warn");
       return;
     }
-if (key === "schedule") {
-  window.location.href = "schedule.html?preview=1";
-  return;
-}
-if (key === "booking") {
-  window.location.href = "booking.html?preview=1";
-  return;
-}
+
+    if (key === "schedule") {
+      window.location.href = "schedule.html?preview=1";
+      return;
+    }
+
+    if (key === "booking") {
+      window.location.href = "booking.html?preview=1";
+      return;
+    }
+
+    if (key === "report") {
+      window.location.href = "sell.html";
+      return;
+    }
 
     if (key === "info") {
       this.showInfoModal();
       return;
     }
 
-  
+    if (key === "sell") {
+      window.location.href = "sell.html";
+      return;
+    }
 
-  if (key === "sell"){
-    window.location.href = "sell.html";
-    return;
-  }
+    const map = {
+      profile: "Mở Hồ sơ (demo)",
+      lookup: "Tra cứu Chuyến bay (demo)",
+      customers: "Khách hàng / Hành khách (demo)",
+      booking: "Quản lý Đặt vé (demo)",
+      schedule: "Nhận lịch Chuyến bay (demo)",
+      sell: "Bán vé (demo)",
+      info: "Cập nhật thông tin (Admin) (demo)"
+    };
 
-  const map = {
-    profile: "Mở Hồ sơ (demo)",
-    lookup: "Tra cứu Chuyến bay (demo)",
-    customers: "Khách hàng / Hành khách (demo)",
-    booking: "Quản lý Đặt vé (demo)",
-    schedule: "Nhận lịch Chuyến bay (demo)",
-    report: "Báo cáo / Thống kê (demo)",
-    sell: "Bán vé (demo)",
-    info: "Cập nhật thông tin (Admin) (demo)"
-  };
-  UI.toast(map[key] || "Tính năng (demo)", "success");
-},
+    UI.toast(map[key] || "Tính năng (demo)", "success");
+  },
 
   tabClick(tab) {
     if (tab === 'account') {
