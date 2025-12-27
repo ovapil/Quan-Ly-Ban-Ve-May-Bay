@@ -103,47 +103,6 @@ app.get("/api/airports", verifyToken, async (req, res) => {
 // ============================================
 // API: ĐĂNG KÝ
 // ============================================
-app.post('/api/auth/signup', async (req, res) => {
-  const { username, email, password } = req.body;
-
-  try {
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: 'Thiếu thông tin bắt buộc' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
-    }
-
-    const existingUser = await pool.query(
-      'SELECT id FROM users WHERE username = $1 OR email = $2',
-      [username, email]
-    );
-
-    if (existingUser.rows.length > 0) {
-      return res.status(409).json({ error: 'Username hoặc Email đã tồn tại' });
-    }
-
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-    const role = 'User';
-
-    const result = await pool.query(
-      `INSERT INTO users (username, email, password_hash, role) 
-       VALUES ($1, $2, $3, $4) 
-       RETURNING id, username, email, role, created_at`,
-      [username, email, passwordHash, role]
-    );
-
-    res.status(201).json({
-      message: 'Đăng ký thành công',
-      user: result.rows[0]
-    });
-
-  } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ error: 'Lỗi server' });
-  }
-});
 
 // ============================================
 // API: ĐĂNG NHẬP
@@ -430,10 +389,10 @@ app.post("/api/admin/staff", verifyToken, requireAdmin, async (req, res) => {
     email = String(email).trim().toLowerCase();
     full_name = String(full_name || "").trim();
     role = String(role || "Staff").trim();
-
-    if (!["Staff", "Agent"].includes(role)) {
-      return res.status(400).json({ error: "Role chỉ được là Staff hoặc Agent" });
+    if (!["Staff", "Admin"].includes(role)) {
+      return res.status(400).json({ error: "Role chỉ được là Staff hoặc Admin" });
     }
+    // Nếu tạo role là Admin thì account này sẽ có toàn bộ quyền như admin hiện tại (kiểm tra quyền qua role ở backend)
 
     const exist = await pool.query(
       "SELECT id FROM users WHERE username=$1",
@@ -726,8 +685,8 @@ app.post("/api/admin/staff/:id/reset-password", verifyToken, requireAdmin, async
       return res.status(404).json({ error: "User không tồn tại" });
     }
     
-    if (!["Staff", "Agent"].includes(u.rows[0].role)) {
-      return res.status(400).json({ error: "Chỉ áp dụng cho Staff/Agent" });
+    if (!["Staff", "Admin"].includes(u.rows[0].role)) {
+      return res.status(400).json({ error: "Chỉ áp dụng cho Staff/Admin" });
     }
 
     // Tạo mật khẩu tạm
@@ -815,7 +774,7 @@ app.get("/api/admin/staff", verifyToken, requireAdmin, async (req, res) => {
         (SELECT MAX(s2.created_at) FROM sessions s2 WHERE s2.user_id=u.id) AS last_session_login,
         (SELECT MAX(s3.revoked_at) FROM sessions s3 WHERE s3.user_id=u.id) AS last_logout
       FROM users u
-      WHERE u.role IN ('Staff','Agent')
+      WHERE u.role IN ('Staff','Admin')
       ORDER BY u.is_active DESC, u.username ASC
     `);
 
@@ -875,8 +834,8 @@ app.delete("/api/admin/staff/:id", verifyToken, requireAdmin, async (req, res) =
       return res.status(404).json({ error: "User không tồn tại" });
     }
     
-    if (!u.rows[0].role || !["Staff", "Agent"].includes(u.rows[0].role)) {
-      return res.status(400).json({ error: "Chỉ xóa Staff/Agent" });
+    if (!u.rows[0].role || !["Staff", "Admin"].includes(u.rows[0].role)) {
+      return res.status(400).json({ error: "Chỉ xóa Staff/Admin" });
     }
 
     await client.query("BEGIN");
@@ -934,8 +893,8 @@ app.patch("/api/admin/staff/:id/active", verifyToken, requireAdmin, async (req, 
       return res.status(404).json({ error: "User không tồn tại" });
     }
     
-    if (!["Staff", "Agent"].includes(u.rows[0].role)) {
-      return res.status(400).json({ error: "Chỉ áp dụng cho Staff/Agent" });
+    if (!["Staff", "Admin"].includes(u.rows[0].role)) {
+      return res.status(400).json({ error: "Chỉ áp dụng cho Staff/Admin" });
     }
 
     await pool.query(
@@ -1790,6 +1749,7 @@ app.delete('/api/admin/airports/:code', verifyToken, requireAdmin, async (req, r
   }
 });
 
+
 // ============================================
 // ADMIN: CLASS MANAGEMENT (HẠNG VÉ)
 // ============================================
@@ -1916,6 +1876,25 @@ app.post('/api/admin/parameters', verifyToken, requireAdmin, async (req, res) =>
   }
 });
 
+app.put('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
+  const name = String(req.params.name).trim();
+  const { value } = req.body || {};
+  try {
+    if (!value) return res.status(400).json({ error: 'Giá trị là bắt buộc' });
+    const result = await pool.query(
+      'UPDATE tham_so SET gia_tri = $1 WHERE ten_tham_so = $2 RETURNING ten_tham_so, gia_tri, mo_ta',
+      [value, name]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Tham số không tồn tại' });
+    }
+    res.json({ message: 'Đã cập nhật tham số', parameter: result.rows[0] });
+  } catch (error) {
+    console.error('PUT /api/admin/parameters/:name error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
 app.delete('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
   const name = String(req.params.name).trim();
 
@@ -1992,6 +1971,7 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     await client.query('BEGIN');
 
     // ========== BƯỚC 1: LẤY THAM SỐ HỆ THỐNG ==========
+
     const thamSoResult = await client.query('SELECT * FROM tham_so');
     const thamSo = {};
     thamSoResult.rows.forEach(row => {
@@ -2001,7 +1981,7 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     console.log('📋 Tham số hệ thống:', thamSo);
 
     // ========== BƯỚC 2: VALIDATE DỮ LIỆU ==========
-    
+
     // Validate thông tin cơ bản
     if (!ma_chuyen_bay || !san_bay_di || !san_bay_den || !gia_ve || !ngay_gio_bay || !thoi_gian_bay) {
       throw new Error('Thiếu thông tin chuyến bay bắt buộc');
@@ -2039,6 +2019,7 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     }
 
     // ========== BƯỚC 3: KIỂM TRA MÃ CHUYẾN BAY ĐÃ TỒN TẠI ==========
+
     const existingFlight = await client.query(
       'SELECT ma_chuyen_bay FROM chuyen_bay WHERE ma_chuyen_bay = $1',
       [ma_chuyen_bay]
@@ -2049,6 +2030,7 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     }
 
     // ========== BƯỚC 4: LƯU CHUYẾN BAY ==========
+
     await client.query(
       `INSERT INTO chuyen_bay 
        (ma_chuyen_bay, san_bay_di, san_bay_den, gia_ve, ngay_gio_bay, thoi_gian_bay, trang_thai)
@@ -2059,6 +2041,7 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     console.log(`✅ Đã lưu chuyến bay: ${ma_chuyen_bay}`);
 
     // ========== BƯỚC 5: LƯU HẠNG VÉ ==========
+
     for (const hv of hang_ve) {
       await client.query(
         `INSERT INTO chuyen_bay_hang_ve (ma_chuyen_bay, ma_hang_ve, so_luong_ghe)
@@ -2069,6 +2052,7 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     }
 
     // ========== BƯỚC 6: LƯU SÂN BAY TRUNG GIAN ==========
+
     if (san_bay_trung_gian && san_bay_trung_gian.length > 0) {
       for (let i = 0; i < san_bay_trung_gian.length; i++) {
         const sb = san_bay_trung_gian[i];
@@ -2169,11 +2153,11 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
         cb.gia_ve,
         cb.ngay_gio_bay,
         cb.thoi_gian_bay,
-        (cb.ngay_gio_bay < NOW()) AS departed,
         cb.san_bay_di  AS ma_san_bay_di,
         cb.san_bay_den AS ma_san_bay_den,
         sb_di.ten_san_bay  AS san_bay_di,
         sb_den.ten_san_bay AS san_bay_den,
+        cb.trang_thai,
 
         COALESCE(SUM(chv.so_luong_ghe), 0) AS tong_ghe,
         COALESCE(SUM(chv.so_ghe_da_ban), 0) AS ghe_da_ban,
@@ -2202,8 +2186,7 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
               'ten_san_bay', sb_tg.ten_san_bay,
               'thanh_pho', sb_tg.thanh_pho,
               'thoi_gian_dung', ctsg.thoi_gian_dung,
-              'ghi_chu', ctsg.ghi_chu,
-              'thu_tu_dung', ctsg.thu_tu_dung
+              'ghi_chu', ctsg.ghi_chu
             ) ORDER BY ctsg.thu_tu_dung)
             FROM chi_tiet_san_bay_trung_gian ctsg
             LEFT JOIN san_bay sb_tg ON sb_tg.ma_san_bay = ctsg.ma_san_bay
@@ -2219,7 +2202,7 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
       ${where}
       GROUP BY
         cb.ma_chuyen_bay, cb.gia_ve, cb.ngay_gio_bay, cb.thoi_gian_bay,
-        cb.san_bay_di, cb.san_bay_den, sb_di.ten_san_bay, sb_den.ten_san_bay
+        cb.san_bay_di, cb.san_bay_den, sb_di.ten_san_bay, sb_den.ten_san_bay, cb.trang_thai
       ${having}
       -- Order upcoming flights first, then departed flights last
       ORDER BY (cb.ngay_gio_bay < NOW()) ASC, cb.ngay_gio_bay ASC
@@ -2289,7 +2272,7 @@ async function getFlightWithSeats(client, ma_chuyen_bay) {
 
       COALESCE(SUM(chv.so_luong_ghe), 0) AS tong_ghe,
       COALESCE(SUM(chv.so_ghe_da_ban), 0) AS ghe_da_ban,
-        COALESCE(SUM(COALESCE(chv.so_ghe_da_dat,0)), 0) AS ghe_da_dat,
+      COALESCE(SUM(COALESCE(chv.so_ghe_da_dat,0)), 0) AS ghe_da_dat,
       COALESCE(SUM(chv.so_luong_ghe - chv.so_ghe_da_ban - COALESCE(chv.so_ghe_da_dat,0)), 0) AS ghe_con_lai,
 
       COALESCE(
@@ -2300,8 +2283,8 @@ async function getFlightWithSeats(client, ma_chuyen_bay) {
             'ti_le_gia', hv.ti_le_gia,
             'so_luong_ghe', COALESCE(chv.so_luong_ghe, 0),
             'da_ban', COALESCE(chv.so_ghe_da_ban, 0),
-              'da_dat', COALESCE(chv.so_ghe_da_dat, 0),
-              'con_lai', (COALESCE(chv.so_luong_ghe, 0) - COALESCE(chv.so_ghe_da_ban, 0) - COALESCE(chv.so_ghe_da_dat,0))
+            'da_dat', COALESCE(chv.so_ghe_da_dat, 0),
+            'con_lai', (COALESCE(chv.so_luong_ghe, 0) - COALESCE(chv.so_ghe_da_ban, 0) - COALESCE(chv.so_ghe_da_dat,0))
           )
           ORDER BY hv.ti_le_gia DESC
         ) FILTER (WHERE chv.ma_hang_ve IS NOT NULL),
@@ -2400,7 +2383,7 @@ app.post('/api/ban-ve', verifyToken, async (req, res) => {
        ON CONFLICT (cmnd)
        DO UPDATE SET ho_ten = EXCLUDED.ho_ten, sdt = EXCLUDED.sdt
        RETURNING id, ho_ten, cmnd, sdt`,
-      [String(ho_ten).trim(), String(cmnd).trim(), String(sdt).trim()]
+      [ho_ten, cmnd, sdt]
     );
     const pax = paxRes.rows[0];
 
@@ -2412,7 +2395,7 @@ app.post('/api/ban-ve', verifyToken, async (req, res) => {
        WHERE cb.ma_chuyen_bay = $1`,
       [ma_chuyen_bay, ma_hang_ve]
     );
-    if (priceRes.rowCount === 0) throw new Error('Không tính được giá vé');
+    if (priceRes.rowCount === 0) throw new Error("Không tính được giá vé");
 
     const base = Number(priceRes.rows[0].gia_co_ban);
     const ratio = Number(priceRes.rows[0].ti_le_gia);
@@ -2809,7 +2792,7 @@ app.get('/api/passengers', verifyToken, async (req, res) => {
         UNION ALL
 
         SELECT
-          v.id::text AS entry_id,
+          v.id::text AS id,
           COALESCE(NULLIF(hk.cmnd, ''), NULLIF(hk.sdt, '')) AS key_id,
           hk.ho_ten AS ho_ten,
           hk.cmnd,

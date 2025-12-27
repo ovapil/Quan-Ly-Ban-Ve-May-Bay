@@ -114,6 +114,8 @@
       transition: all 0.2s;
       white-space: nowrap;
       margin-left: 24px;
+      width: 140px;
+      text-align: center;
     }
 
     .settings-card-btn:hover {
@@ -526,12 +528,12 @@
         const data = await response.json();
 
         if (!response.ok) {
-          alert('❌ ' + (data.error || 'Lỗi thay đổi mật khẩu'));
+          alert((data.error || 'Lỗi thay đổi mật khẩu'));
           return;
         }
 
         showSuccessModal(
-          '✅ Thành công!',
+          'Thành công!',
           'Mật khẩu đã thay đổi thành công. Vui lòng đăng nhập lại.'
         );
         closeChangePasswordModal();
@@ -545,7 +547,7 @@
 
       } catch (error) {
         console.error('Change password error:', error);
-        alert('❌ Lỗi server: ' + error.message);
+        alert('Lỗi server: ' + error.message);
       }
     }
 
@@ -605,7 +607,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          alert('❌ ' + (data.error || 'Lỗi cập nhật avatar'));
+          alert((data.error || 'Lỗi cập nhật avatar'));
           return;
         }
 
@@ -620,14 +622,14 @@
         avatarImg.style.display = 'block';
 
         showSuccessModal(
-          '✅ Cập nhật thành công!',
+          'Cập nhật thành công!',
           'Ảnh đại diện của bạn đã được cập nhật.'
         );
         closeChangeAvatarModal();
 
       } catch (error) {
         console.error('Change avatar error:', error);
-        alert('❌ Lỗi server: ' + error.message);
+        alert('Lỗi server: ' + error.message);
       }
     }
 

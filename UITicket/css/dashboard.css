@@ -718,9 +718,10 @@ body.app-mode{
 .action-btn{
   padding: 6px 10px;
   border-radius: 10px;
-  border:1px solid #e5e7eb;
-  background:#fff;
-  cursor:pointer;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
   font-weight: 900;
   font-size: 11px;
   transition: all 0.2s;
@@ -728,15 +729,21 @@ body.app-mode{
 .action-btn:hover{
   box-shadow: 0 4px 12px rgba(17,24,39,0.12);
   transform: translateY(-1px);
+  filter: brightness(0.95);
 }
 .action-btn.lock{ border-color: rgba(239,68,68,0.30); color:#b91c1c; }
-.action-btn.lock:hover{ background: #fef2f2; }
+/* .action-btn.lock: dùng màu xanh, icon trắng */
+.action-btn.lock{ border-color: var(--primary); color: #fff; }
+.action-btn.lock:hover{ filter: brightness(0.95); }
 .action-btn.unlock{ border-color: rgba(34,197,94,0.30); color:#15803d; }
-.action-btn.unlock:hover{ background: #f0fdf4; }
+.action-btn.unlock{ border-color: var(--primary); color: #fff; }
+.action-btn.unlock:hover{ filter: brightness(0.95); }
 .action-btn.reset{ border-color: rgba(245,158,11,0.35); color:#b45309; }
-.action-btn.reset:hover{ background: #fefce8; }
+.action-btn.reset{ border-color: var(--primary); color: #fff; }
+.action-btn.reset:hover{ filter: brightness(0.95); }
 .action-btn.delete{ border-color: rgba(239,68,68,0.35); color: #b91c1c; }
-.action-btn.delete:hover{ background: #fef2f2; }
+.action-btn.delete{ border-color: var(--primary); color: #fff; }
+.action-btn.delete:hover{ filter: brightness(0.95); }
 
 /* ===== RESET REQUESTS ===== */
 .req{

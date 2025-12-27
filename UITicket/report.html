@@ -37,24 +37,25 @@
       </nav>
 
       <div class="actions">
-        <button class="icon-btn" aria-label="Notifications" id="btnNoti">
-          <i class="fa-regular fa-bell"></i>
-          <span class="badge" id="notifBadge">1</span>
-        </button>
-        <button class="icon-btn" aria-label="Menu">
-          <i class="fa-solid fa-bars"></i>
-        </button>
+        <!-- Đã xóa các nút thông báo, menu, back trên bar -->
       </div>
     </div>
   </header>
 
   <main class="page report-page">
     <section class="report-shell">
-      <h1 class="report-title">LẬP BÁO CÁO</h1>
+      <div class="report-title-row">
+        <button class="back-btn white" id="btnBack" title="Quay lại">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div class="report-title-center-wrap">
+          <h1 class="report-title">LẬP BÁO CÁO</h1>
+        </div>
+      </div>
 
       <div class="report-card">
         <!-- Bộ lọc chính -->
-        <div class="report-filter-row">
+        <div class="report-filter-row beautify-bar">
           <div class="field">
             <label>Loại báo cáo</label>
             <select class="input" id="reportType">
@@ -73,19 +74,19 @@
             <input class="input" id="monthInput" type="month" />
           </div>
 
-          <div class="btns">
-            <button class="btn primary" id="btnGenerate">
+          <div class="filter-actions-spacer"></div>
+          <div class="btns align-right">
+            <button class="form-btn primary" id="btnGenerate">
               <i class="fa-solid fa-chart-column"></i>
               Báo cáo
             </button>
-
-            <div class="btn-split">
-              <button class="btn" id="btnExport" title="Xuất báo cáo">
+            <div class="btn-split beautify-btn-split">
+              <button class="form-btn primary" id="btnExport" title="Xuất báo cáo">
                 <i class="fa-solid fa-file-arrow-down"></i>
                 Xuất
               </button>
-              <button class="btn caret" id="btnExportCaret" aria-label="Export menu">
-                <i class="fa-solid fa-caret-down"></i>
+              <button class="form-btn primary" id="btnPrint" title="In báo cáo">
+                <i class="fa-solid fa-print"></i>
               </button>
               <div class="split-menu hidden" id="exportMenu">
                 <button type="button" class="menu-item" data-export="csv">Xuất CSV</button>
@@ -176,10 +177,7 @@
           </div>
         </div>
 
-        <!-- Back button (góc trái dưới) -->
-        <button class="back-fab" id="btnBack" title="Quay lại">
-          <i class="fa-solid fa-arrow-left"></i>
-        </button>
+        <!-- Back button removed from bottom, now in header -->
       </div>
     </section>
   </main>

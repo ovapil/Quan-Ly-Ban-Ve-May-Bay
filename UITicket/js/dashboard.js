@@ -21,12 +21,12 @@ const Dashboard = {
     const token = localStorage.getItem('uiticket_token');
 
     if (!token) {
-      console.log('❌ Không có token, redirect về index');
+      console.log('Không có token, redirect về index');
       window.location.href = "index.html";
       return;
     }
 
-    console.log('✅ Token tìm thấy:', token.substring(0, 20) + '...');
+    console.log('Token tìm thấy:', token.substring(0, 20) + '...');
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/verify`, {
@@ -42,7 +42,7 @@ const Dashboard = {
       }
 
       const data = await response.json();
-      console.log('✅ Verify thành công:', data.user);
+      console.log('Verify thành công:', data.user);
       this.applySession(data.user);
       this.initAvatar();
 
@@ -54,7 +54,7 @@ const Dashboard = {
       this.startSessionCheck();
 
     } catch (error) {
-      console.error('❌ Verify error:', error);
+      console.error('Verify error:', error);
       localStorage.removeItem('uiticket_token');
       localStorage.removeItem('uiticket_user');
       alert(`Lỗi: ${error.message}\n\nVui lòng đăng nhập lại.`);
@@ -150,7 +150,7 @@ const Dashboard = {
     const user = JSON.parse(localStorage.getItem('uiticket_user') || '{"role":"User"}');
 
     if (key === "info" && user.role !== "Admin") {
-      UI.toast("❌ Không đủ quyền", "warn");
+      UI.toast("Không đủ quyền", "warn");
       return;
     }
 
@@ -238,7 +238,24 @@ const Dashboard = {
       
       if (box) {
         if (!data.items?.length) {
-          box.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Không có yêu cầu pending 🎉</p>`;
+          box.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Không có yêu cầu pending          app.put('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
+            const name = String(req.params.name).trim();
+            const { value } = req.body || {};
+            try {
+              if (!value) return res.status(400).json({ error: 'Giá trị là bắt buộc' });
+              const result = await pool.query(
+                'UPDATE tham_so SET gia_tri = $1 WHERE ten_tham_so = $2 RETURNING ten_tham_so, gia_tri, mo_ta',
+                [value, name]
+              );
+              if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'Tham số không tồn tại' });
+              }
+              res.json({ message: 'Đã cập nhật tham số', parameter: result.rows[0] });
+            } catch (error) {
+              console.error('PUT /api/admin/parameters/:name error:', error);
+              res.status(500).json({ error: 'Lỗi server' });
+            }
+          });</p>`;
           return;
         }
 
@@ -278,13 +295,13 @@ const Dashboard = {
       
       if (!res.ok) return UI.toast(data.error || "Approve failed", "warn");
 
-      UI.toast("✅ Đã duyệt & gửi mail mật khẩu mới", "success");
+      UI.toast("Đã duyệt & gửi mail mật khẩu mới", "success");
       await this.loadResetRequests();
       await refreshAdminBadge();
     } catch (error) {
       UI.hideLoading();
       console.error('Approve reset error:', error);
-      UI.toast("❌ Không thể duyệt yêu cầu", "warn");
+      UI.toast("Không thể duyệt yêu cầu", "warn");
     }
   },
 
@@ -322,13 +339,13 @@ const Dashboard = {
         return UI.toast(data.error || "Reject failed", "warn");
       }
 
-      UI.toast("❌ Đã từ chối & gửi mail thông báo", "success");
+      UI.toast("Đã từ chối & gửi mail thông báo", "success");
       await this.loadResetRequests();
       await refreshAdminBadge();
     } catch (error) {
       UI.hideLoading();
       console.error('Reject reset error:', error);
-      UI.toast("❌ Không thể từ chối yêu cầu", "warn");
+      UI.toast("Không thể từ chối yêu cầu", "warn");
     }
   },
 
@@ -362,7 +379,7 @@ const Dashboard = {
 
   async openUserManagement() {
     const user = JSON.parse(localStorage.getItem("uiticket_user") || "{}");
-    if (!isAdmin(user)) return UI.toast("❌ Không đủ quyền", "warn");
+    if (!isAdmin(user)) return UI.toast("Không đủ quyền", "warn");
 
     this.showStaffModal();
     await this.loadStaffList();
@@ -437,8 +454,8 @@ const Dashboard = {
         : `<span class="badge-pill badge-locked">✗ Locked</span>`;
 
       const lockBtn = s.is_active
-        ? `<button class="action-btn lock" onclick="Dashboard.toggleStaff(${s.id}, false)">🔒 Khóa</button>`
-        : `<button class="action-btn unlock" onclick="Dashboard.toggleStaff(${s.id}, true)">🔓 Mở</button>`;
+        ? `<button class="action-btn lock" onclick="Dashboard.toggleStaff(${s.id}, false)"><i class='fa-solid fa-lock'></i></button>`
+        : `<button class="action-btn unlock" onclick="Dashboard.toggleStaff(${s.id}, true)"><i class='fa-solid fa-unlock'></i></button>`;
 
       return `
         <tr>
@@ -468,8 +485,8 @@ const Dashboard = {
           <td>
             <div class="staff-actions">
               ${lockBtn}
-              <button class="action-btn reset" onclick="Dashboard.resetStaffPassword(${s.id})">🔑 Reset</button>
-              <button class="action-btn delete" onclick="Dashboard.deleteStaff(${s.id})">🗑️ Xóa</button>
+              <button class="action-btn reset" onclick="Dashboard.resetStaffPassword(${s.id})"><i class='fa-solid fa-rotate-right'></i></button>
+              <button class="action-btn delete" onclick="Dashboard.deleteStaff(${s.id})"><i class='fa-solid fa-trash'></i></button>
             </div>
           </td>
         </tr>
@@ -556,7 +573,7 @@ const Dashboard = {
     } catch (error) {
       if (!silent) {
         console.error('Load staff error:', error);
-        UI.toast("❌ Không thể tải danh sách nhân viên", "warn");
+        UI.toast("Không thể tải danh sách nhân viên", "warn");
       }
     }
   },
@@ -595,14 +612,14 @@ const Dashboard = {
       
       if (!res.ok) return UI.toast(data.error || "Update failed", "warn");
       
-      UI.toast(`✅ ${active ? 'Đã mở khóa' : 'Đã khóa'} nhân viên thành công`, "success");
+      UI.toast(`${active ? 'Đã mở khóa' : 'Đã khóa'} nhân viên thành công`, "success");
       
       await this.loadStaffList(true);
       
     } catch (error) {
       UI.hideLoading();
       console.error('Toggle staff error:', error);
-      UI.toast("❌ Không thể cập nhật trạng thái", "warn");
+      UI.toast("Không thể cập nhật trạng thái", "warn");
     }
   },
 
@@ -652,7 +669,7 @@ const Dashboard = {
       await this.loadStaffList(true);
 
       if (data.mailSent) {
-        UI.toast("✅ Đã tạo nhân viên & gửi mail", "success");
+        UI.toast("Đã tạo nhân viên & gửi mail", "success");
       } else {
         UI.toast("⚠️ Đã tạo nhân viên (chưa cấu hình mail)", "warn");
         
@@ -680,7 +697,7 @@ const Dashboard = {
     } catch (error) {
       UI.hideLoading();
       console.error('Create staff error:', error);
-      UI.toast("❌ Không thể tạo nhân viên", "warn");
+      UI.toast("Không thể tạo nhân viên", "warn");
     }
   },
 
@@ -712,14 +729,14 @@ const Dashboard = {
       
       if (!res.ok) return UI.toast(data.error || "Reset failed", "warn");
       
-      UI.toast("✅ Đã reset mật khẩu & gửi email", "success");
+      UI.toast("Đã reset mật khẩu & gửi email", "success");
       
       await this.loadStaffList(true);
       
     } catch (error) {
       UI.hideLoading();
       console.error('Reset password error:', error);
-      UI.toast("❌ Không thể reset mật khẩu", "warn");
+      UI.toast("Không thể reset mật khẩu", "warn");
     }
   },
 
@@ -751,14 +768,14 @@ const Dashboard = {
       
       if (!res.ok) return UI.toast(data.error || "Delete failed", "warn");
       
-      UI.toast("✅ Đã xóa nhân viên thành công", "success");
+      UI.toast("Đã xóa nhân viên thành công", "success");
       
       await this.loadStaffList(true);
       
     } catch (error) {
       UI.hideLoading();
       console.error('Delete staff error:', error);
-      UI.toast("❌ Không thể xóa nhân viên", "warn");
+      UI.toast("Không thể xóa nhân viên", "warn");
     }
   },
 
@@ -790,7 +807,7 @@ const Dashboard = {
     localStorage.removeItem('uiticket_token');
     localStorage.removeItem('uiticket_user');
 
-    UI.toast("👋 Đã đăng xuất!", "success");
+    UI.toast("Đã đăng xuất!", "success");
 
     setTimeout(() => {
       window.location.href = "index.html";
@@ -1130,7 +1147,7 @@ Object.assign(Dashboard, {
       `).join('');
     } catch (error) {
       console.error('Load airports error:', error);
-      UI.toast('❌ Lỗi tải sân bay', 'warn');
+      UI.toast('Lỗi tải sân bay', 'warn');
     }
   },
 
@@ -1142,7 +1159,7 @@ Object.assign(Dashboard, {
     const country = document.getElementById("airportCountry")?.value?.trim();
 
     if (!code || !name) {
-      UI.toast("❌ Vui lòng nhập mã & tên sân bay", "warn");
+      UI.toast("Vui lòng nhập mã & tên sân bay", "warn");
       return;
     }
 
@@ -1158,11 +1175,11 @@ Object.assign(Dashboard, {
       const data = await res.json();
       
       if (!res.ok) {
-        UI.toast(`❌ ${data.error || 'Lỗi thêm sân bay'}`, 'warn');
+        UI.toast(`${data.error || 'Lỗi thêm sân bay'}`, 'warn');
         return;
       }
 
-      UI.toast("✅ Thêm sân bay thành công", "success");
+      UI.toast("Thêm sân bay thành công", "success");
       document.getElementById("airportCode").value = '';
       document.getElementById("airportName").value = '';
       document.getElementById("airportCity").value = '';
@@ -1170,7 +1187,7 @@ Object.assign(Dashboard, {
       this.loadAirports();
     } catch (error) {
       console.error('Add airport error:', error);
-      UI.toast('❌ Lỗi thêm sân bay', 'warn');
+      UI.toast('Lỗi thêm sân bay', 'warn');
     }
   },
 
@@ -1196,15 +1213,15 @@ Object.assign(Dashboard, {
       const data = await res.json();
       
       if (!res.ok) {
-        UI.toast(`❌ ${data.error || 'Lỗi xóa sân bay'}`, 'warn');
+        UI.toast(`${data.error || 'Lỗi xóa sân bay'}`, 'warn');
         return;
       }
 
-      UI.toast("✅ Đã xóa sân bay", "success");
+      UI.toast("Đã xóa sân bay", "success");
       this.loadAirports();
     } catch (error) {
       console.error('Delete airport error:', error);
-      UI.toast('❌ Lỗi xóa sân bay', 'warn');
+      UI.toast('Lỗi xóa sân bay', 'warn');
     }
   },
 
@@ -1241,7 +1258,7 @@ Object.assign(Dashboard, {
       `).join('');
     } catch (error) {
       console.error('Load classes error:', error);
-      UI.toast('❌ Lỗi tải hạng vé', 'warn');
+      UI.toast('Lỗi tải hạng vé', 'warn');
     }
   },
 
@@ -1252,7 +1269,7 @@ Object.assign(Dashboard, {
     const ratio = parseFloat(document.getElementById("classPriceRatio")?.value);
 
     if (!code || !name || isNaN(ratio)) {
-      UI.toast("❌ Vui lòng nhập đầy đủ thông tin", "warn");
+      UI.toast("Vui lòng nhập đầy đủ thông tin", "warn");
       return;
     }
 
@@ -1268,18 +1285,18 @@ Object.assign(Dashboard, {
       const data = await res.json();
       
       if (!res.ok) {
-        UI.toast(`❌ ${data.error || 'Lỗi thêm hạng vé'}`, 'warn');
+        UI.toast(`${data.error || 'Lỗi thêm hạng vé'}`, 'warn');
         return;
       }
 
-      UI.toast("✅ Thêm hạng vé thành công", "success");
+      UI.toast("Thêm hạng vé thành công", "success");
       document.getElementById("className").value = '';
       document.getElementById("classDisplayName").value = '';
       document.getElementById("classPriceRatio").value = '';
       this.loadClasses();
     } catch (error) {
       console.error('Add class error:', error);
-      UI.toast('❌ Lỗi thêm hạng vé', 'warn');
+      UI.toast('Lỗi thêm hạng vé', 'warn');
     }
   },
 
@@ -1305,15 +1322,15 @@ Object.assign(Dashboard, {
       const data = await res.json();
       
       if (!res.ok) {
-        UI.toast(`❌ ${data.error || 'Lỗi xóa hạng vé'}`, 'warn');
+        UI.toast(`${data.error || 'Lỗi xóa hạng vé'}`, 'warn');
         return;
       }
 
-      UI.toast("✅ Đã xóa hạng vé", "success");
+      UI.toast("Đã xóa hạng vé", "success");
       this.loadClasses();
     } catch (error) {
       console.error('Delete class error:', error);
-      UI.toast('❌ Lỗi xóa hạng vé', 'warn');
+      UI.toast('Lỗi xóa hạng vé', 'warn');
     }
   },
 
@@ -1328,18 +1345,18 @@ Object.assign(Dashboard, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      
       if (!data.parameters) {
         list.innerHTML = '<div class="info-empty">Chưa có tham số nào</div>';
         return;
       }
-
       list.innerHTML = data.parameters.map(p => `
         <div class="info-item">
           <div class="info-item-main">
             <div class="info-item-code">${escapeHtml(p.ten_tham_so)}</div>
             <div class="info-item-details">
-              <div class="info-item-name">${escapeHtml(p.gia_tri)}</div>
+              <div class="info-item-name param-value" data-name="${escapeHtml(p.ten_tham_so)}">
+                ${escapeHtml(p.gia_tri)}
+              </div>
               <div class="info-item-subtext">${escapeHtml(p.mo_ta || '(không có mô tả)')}</div>
             </div>
           </div>
@@ -1348,81 +1365,62 @@ Object.assign(Dashboard, {
           </button>
         </div>
       `).join('');
+      // Gán sự kiện click cho từng giá trị tham số
+      document.querySelectorAll('.param-value').forEach(el => {
+        el.addEventListener('click', function(e) {
+          if (el.querySelector('input')) return;
+          const name = el.getAttribute('data-name');
+          const oldValue = el.textContent.trim();
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = oldValue;
+          input.className = 'param-edit-input';
+          input.style.width = '120px';
+          input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') Dashboard.saveParameterValue(name, input.value);
+            if (ev.key === 'Escape') Dashboard.loadParameters();
+          });
+          const saveBtn = document.createElement('button');
+          saveBtn.textContent = 'Lưu';
+          saveBtn.className = 'param-save-btn';
+          saveBtn.onclick = () => Dashboard.saveParameterValue(name, input.value);
+          el.innerHTML = '';
+          el.appendChild(input);
+          el.appendChild(saveBtn);
+          input.focus();
+        });
+      });
     } catch (error) {
       console.error('Load parameters error:', error);
-      UI.toast('❌ Lỗi tải tham số', 'warn');
+      UI.toast('Lỗi tải tham số', 'warn');
     }
   },
 
-  async addParameter() {
-    const token = localStorage.getItem("uiticket_token");
-    const name = document.getElementById("paramName")?.value?.trim();
-    const value = document.getElementById("paramValue")?.value?.trim();
-    const desc = document.getElementById("paramDesc")?.value?.trim();
-
-    if (!name || !value) {
-      UI.toast("❌ Vui lòng nhập tên & giá trị tham số", "warn");
+  async saveParameterValue(name, newValue) {
+    if (!newValue?.trim()) {
+      UI.toast('Giá trị không được để trống', 'warn');
       return;
     }
-
+    const token = localStorage.getItem("uiticket_token");
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/parameters`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}/admin/parameters/${encodeURIComponent(name)}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name, value, desc })
+        body: JSON.stringify({ value: newValue })
       });
       const data = await res.json();
-      
       if (!res.ok) {
-        UI.toast(`❌ ${data.error || 'Lỗi thêm tham số'}`, 'warn');
+        UI.toast(`${data.error || 'Lỗi cập nhật tham số'}`, 'warn');
         return;
       }
-
-      UI.toast("✅ Thêm tham số thành công", "success");
-      document.getElementById("paramName").value = '';
-      document.getElementById("paramValue").value = '';
-      document.getElementById("paramDesc").value = '';
+      UI.toast('Đã cập nhật tham số', 'success');
       this.loadParameters();
     } catch (error) {
-      console.error('Add parameter error:', error);
-      UI.toast('❌ Lỗi thêm tham số', 'warn');
-    }
-  },
-
-  async deleteParameter(name) {
-    const confirmed = await UI.confirm({
-      title: "Xóa tham số",
-      message: `Bạn có chắc muốn xóa tham số ${escapeHtml(name)} này?`,
-      confirmText: "Xóa",
-      cancelText: "Hủy",
-      type: "danger",
-      icon: "fa-trash"
-    });
-
-    if (!confirmed) return;
-
-    const token = localStorage.getItem("uiticket_token");
-    
-    try {
-      const res = await fetch(`${API_BASE_URL}/admin/parameters/${encodeURIComponent(name)}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      
-      if (!res.ok) {
-        UI.toast(`❌ ${data.error || 'Lỗi xóa tham số'}`, 'warn');
-        return;
-      }
-
-      UI.toast("✅ Đã xóa tham số", "success");
-      this.loadParameters();
-    } catch (error) {
-      console.error('Delete parameter error:', error);
-      UI.toast('❌ Lỗi xóa tham số', 'warn');
+      console.error('Update parameter error:', error);
+      UI.toast('Lỗi cập nhật tham số', 'warn');
     }
   }
 });

@@ -1,3 +1,114 @@
+/* Nút quay lại ngay trên search-card */
+.search-back-btn-row {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: -18px;
+  margin-top: 0;
+  position: relative;
+  z-index: 20;
+}
+.search-back-btn-row .tool-btn.back {
+  position: static;
+  margin-left: 180px;
+  margin-bottom: 0;
+  margin-top: 0;
+}
+/* Nút tra cứu gradient xanh dương giống nút chỉnh sửa ở tài khoản */
+.btn-search {
+  background: linear-gradient(90deg, #2563eb 0%, #1e40af 100%) !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 12px 32px;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.10);
+  transition: background 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-search:hover {
+  background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%) !important;
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* Nút tra cứu gradient xanh dương giống nút chỉnh sửa ở tài khoản */
+/* Trả lại màu gốc cho nút tra cứu, bỏ gradient */
+.tool-btn.back {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  z-index: 20;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.12);
+  color: #111;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+.tool-btn.back:hover {
+  box-shadow: 0 12px 28px rgba(17,24,39,0.18);
+}
+.tool-btn.back i {
+  font-size: 18px;
+}
+/* Nút quay lại vuông bo góc, nền trắng, icon đen */
+/* Nút quay lại giống booking: top 24px, left 32px, ngoài hero-content */
+/* Page header with back button (đồng bộ booking) */
+.page-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 18px;
+}
+.page-header .tool-btn {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.tool-btn {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+.tool-btn.back {
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.12);
+  color: #111;
+}
+.tool-btn.back:hover {
+  box-shadow: 0 12px 28px rgba(17,24,39,0.18);
+}
+.tool-btn i { 
+  font-size: 18px; 
+}
+
+/* Header tra cứu chuyến bay đồng bộ style */
+.lookup-header {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #222e3a;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 0;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 /* ===== LOOKUP PAGE TOKENS ===== */
 :root {
   --lookup-blue: #4a79ff;

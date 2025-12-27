@@ -74,7 +74,7 @@ const Settings = {
     localStorage.removeItem('uiticket_user');
 
     // Redirect to login
-    UI.toast('👋 Đã đăng xuất!', 'success');
+    UI.toast('Đã đăng xuất!', 'success');
     setTimeout(() => {
       window.location.href = 'index.html';
     }, 800);

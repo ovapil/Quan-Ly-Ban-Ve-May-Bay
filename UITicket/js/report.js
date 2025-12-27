@@ -240,7 +240,7 @@ const Report = {
       "tabSettings",
       "btnGenerate",
       "btnExport",
-      "btnExportCaret",
+      "btnPrint",
       "exportMenu",
       "btnReset",
       "btnBack",
@@ -322,13 +322,12 @@ const Report = {
     if (this.els.tableSearch) this.els.tableSearch.addEventListener("input", onSearch);
 
     // export menu
-    if (this.els.btnExportCaret && this.els.exportMenu) {
-      this.els.btnExportCaret.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.els.exportMenu.classList.toggle("hidden");
-      });
-      document.addEventListener("click", () => this.els.exportMenu.classList.add("hidden"));
-      this.els.exportMenu.addEventListener("click", (e) => e.stopPropagation());
+    // Print button
+    if (this.els.btnPrint) {
+      this.els.btnPrint.addEventListener("click", () => window.print());
+    }
+    // Export menu (still allow menu for CSV/print if needed)
+    if (this.els.exportMenu) {
       this.els.exportMenu.querySelectorAll(".menu-item").forEach((btn) => {
         simulateButton(btn);
         btn.addEventListener("click", () => {

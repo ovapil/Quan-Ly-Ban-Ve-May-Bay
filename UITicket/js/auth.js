@@ -6,7 +6,7 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 const AuthUI = {
   hideAll() {
-    ["welcome-screen", "login-screen", "signup-screen", "forgot-screen"].forEach(id => {
+    ["welcome-screen", "login-screen", "forgot-screen"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = "none";
     });
@@ -20,11 +20,7 @@ const AuthUI = {
     document.getElementById("login-screen").style.display = "flex";
     history.pushState({ screen: "login" }, "");
   },
-  showSignup() {
-    this.hideAll();
-    document.getElementById("signup-screen").style.display = "flex";
-    history.pushState({ screen: "signup" }, "");
-  },
+  // Đã xóa chức năng showSignup
   showForgot() {
     this.hideAll();
     document.getElementById("forgot-screen").style.display = "flex";
@@ -34,6 +30,15 @@ const AuthUI = {
 
 const Auth = {
   init() {
+    // Nếu đã đăng nhập và có chọn ghi nhớ thì vào thẳng dashboard
+    const token = localStorage.getItem('uiticket_token');
+    const user = localStorage.getItem('uiticket_user');
+    const savedLogin = JSON.parse(localStorage.getItem('uiticket_remember_login') || '{}');
+    if (token && user && savedLogin && savedLogin.remember) {
+      window.location.href = "dashboard.html";
+      return;
+    }
+
     // Toggle password login
     const passwordInput = document.getElementById("passwordInput");
     const toggleBtn = document.getElementById("togglePasswordBtn");
@@ -49,75 +54,20 @@ const Auth = {
       });
     }
 
-    // Toggle password signup
-    const signupPass = document.getElementById("signupPass");
-    const toggleSignupBtn = document.getElementById("toggleSignupBtn");
-    if (signupPass && toggleSignupBtn) {
-      toggleSignupBtn.addEventListener("click", () => {
-        if (signupPass.type === "password") {
-          signupPass.type = "text";
-          toggleSignupBtn.classList.replace("fa-eye-slash", "fa-eye");
-        } else {
-          signupPass.type = "password";
-          toggleSignupBtn.classList.replace("fa-eye", "fa-eye-slash");
-        }
-      });
+    // Ghi nhớ đăng nhập: tự động điền lại nếu có lưu
+    if (savedLogin && savedLogin.username) {
+      const userInput = document.getElementById("loginUser");
+      if (userInput) userInput.value = savedLogin.username;
+      if (savedLogin.remember) {
+        const rememberCb = document.getElementById("remember");
+        if (rememberCb) rememberCb.checked = true;
+      }
     }
 
     window.onpopstate = () => AuthUI.showWelcome();
   },
 
-  // ✅ Đăng ký qua API
-  async handleSignup() {
-    const user = document.getElementById("signupUser").value.trim();
-    const email = document.getElementById("signupEmail").value.trim();
-    const pass = document.getElementById("signupPass").value;
-    const passConfirm = document.getElementById("signupPassConfirm").value;
-
-    // Validate
-    if (!user) return alert("Vui lòng nhập tên tài khoản!");
-    if (user.length < 3) return alert("Tên tài khoản phải có ít nhất 3 ký tự!");
-    if (!email) return alert("Vui lòng nhập email!");
-    if (!/\S+@\S+\.\S+/.test(email)) return alert("Email không hợp lệ!");
-    if (!pass) return alert("Vui lòng nhập mật khẩu!");
-    if (pass.length < 6) return alert("Mật khẩu phải có ít nhất 6 ký tự!");
-    if (pass !== passConfirm) return alert("Mật khẩu xác nhận không khớp!");
-
-    try {
-      UI.showLoading();
-
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user, email, password: pass })
-      });
-
-      const data = await response.json();
-      
-      UI.hideLoading();
-
-      if (!response.ok) {
-        UI.toast(`❌ ${data.error || "Đăng ký thất bại"}`, "warn");
-        return;
-      }
-
-      UI.toast("🎉 Đăng ký thành công!", "success");
-
-      setTimeout(() => {
-        AuthUI.showLogin();
-        document.getElementById("loginUser").value = user;
-        ["signupUser", "signupEmail", "signupPass", "signupPassConfirm"].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.value = "";
-        });
-      }, 650);
-
-    } catch (error) {
-      UI.hideLoading();
-      console.error('Signup error:', error);
-      UI.toast("❌ Lỗi kết nối server. Vui lòng kiểm tra backend đã chạy chưa!", "warn");
-    }
-  },
+  // Đã xóa logic đăng ký qua API
 
   // ✅ Đăng nhập qua API
   async handleLogin() {
@@ -128,6 +78,12 @@ const Auth = {
     if (!password) return alert("Vui lòng nhập mật khẩu!");
 
     const remember = document.getElementById("remember").checked;
+    // Nếu chọn ghi nhớ thì lưu username, ngược lại xóa
+    if (remember) {
+      localStorage.setItem('uiticket_remember_login', JSON.stringify({ username, remember: true }));
+    } else {
+      localStorage.removeItem('uiticket_remember_login');
+    }
 
     try {
       UI.showLoading();
@@ -143,7 +99,7 @@ const Auth = {
       UI.hideLoading();
 
       if (!response.ok) {
-        UI.toast(`❌ ${data.error || "Đăng nhập thất bại"}`, "warn");
+        UI.toast(`${data.error || "Đăng nhập thất bại"}`, "warn");
         return;
       }
 
@@ -151,7 +107,7 @@ const Auth = {
       localStorage.setItem('uiticket_token', data.token);
       localStorage.setItem('uiticket_user', JSON.stringify(data.user));
 
-      UI.toast("✅ Đăng nhập thành công!", "success");
+      UI.toast("Đăng nhập thành công!", "success");
 
       // ✅ Clear form
       document.getElementById("passwordInput").value = "";
@@ -164,7 +120,7 @@ const Auth = {
     } catch (error) {
       UI.hideLoading();
       console.error('Login error:', error);
-      UI.toast("❌ Lỗi kết nối server. Vui lòng kiểm tra backend đã chạy chưa!", "warn");
+      UI.toast("Lỗi kết nối server. Vui lòng kiểm tra backend đã chạy chưa!", "warn");
     }
   },
 
@@ -191,11 +147,11 @@ const Auth = {
       UI.hideLoading();
 
       if (!response.ok) {
-        UI.toast(`❌ ${data.error || "Gửi yêu cầu thất bại"}`, "warn");
+        UI.toast(`${data.error || "Gửi yêu cầu thất bại"}`, "warn");
         return;
       }
 
-      UI.toast("✅ Đã gửi yêu cầu reset tới Admin!", "success");
+      UI.toast("Đã gửi yêu cầu reset tới Admin!", "success");
 
       // ✅ Clear form
       ["resetUser", "resetEmail", "resetMessage"].forEach(id => {
@@ -208,7 +164,7 @@ const Auth = {
     } catch (error) {
       UI.hideLoading();
       console.error('Reset request error:', error);
-      UI.toast("❌ Lỗi kết nối server!", "warn");
+      UI.toast("Lỗi kết nối server!", "warn");
     }
   }
 };

@@ -1,3 +1,79 @@
+.report-title-row .back-btn.white {
+  background: #fff;
+  color: var(--primary);
+  border: none;
+  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 8px 18px rgba(46, 74, 168, 0.13);
+  transition: background 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+}
+.report-title-row .back-btn.white:hover {
+  background: #f1f5f9;
+  color: #1e3a8a;
+  box-shadow: 0 12px 28px rgba(46, 74, 168, 0.18);
+}
+
+/* Align action buttons to the right */
+.btns.align-right {
+  justify-content: flex-end !important;
+  width: 100%;
+}
+/* Align back button with title */
+.report-title-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.report-title-row .back-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 8px 18px rgba(46, 74, 168, 0.13);
+  transition: background 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+}
+.report-title-row .back-btn:hover {
+  background: #1e3a8a;
+  box-shadow: 0 12px 28px rgba(46, 74, 168, 0.18);
+}
+
+/* Match account page button style for report actions */
+.form-btn.primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 12px 36px;
+  border-radius: 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(46, 74, 168, 0.13);
+}
+.form-btn.primary:hover {
+  background: #1e3a8a;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(46, 74, 168, 0.18);
+}
+.form-btn.primary:active {
+  transform: translateY(0);
+}
 /* ============================================
    REPORT.CSS - Lập báo cáo (Theo tháng / Theo năm)
    Mục tiêu: giống style UITicket (bo tròn, xanh - trắng),
@@ -109,10 +185,22 @@ select.input{ padding-right: 42px; }
 
 /* ===== Buttons ===== */
 .btns{
-  display:flex;
-  gap: 10px;
-  align-items:flex-end;
-  justify-content:flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 18px;
+  position: relative;
+}
+.report-title-center-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.filter-actions-spacer {
+  min-width: 40px;
+  flex: 0 0 40px;
 }
 
 .btn{
@@ -134,16 +222,50 @@ select.input{ padding-right: 42px; }
 .btn:hover{ transform: translateY(-1px); box-shadow: 0 12px 26px rgba(17,24,39,0.10); }
 .btn:active{ transform: translateY(0); }
 
-.btn.primary{
+
+.btn.primary, .btn.beautify-btn {
   background: linear-gradient(135deg, #2E4AA8 0%, #27449C 100%);
   color: #fff;
   border-color: transparent;
+  box-shadow: 0 8px 18px rgba(46, 74, 168, 0.13);
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.btn.primary:hover, .btn.beautify-btn:hover {
+  background: linear-gradient(135deg, #3552B6 0%, #2E4AA8 100%);
+  box-shadow: 0 12px 28px rgba(46, 74, 168, 0.18);
 }
 
-.btn.caret{
+.btn.print {
+  background: linear-gradient(135deg, #5D79E6 0%, #3552B6 100%);
+  color: #fff;
+  border-color: transparent;
   width: 44px;
   padding: 0;
-  justify-content:center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(93, 121, 230, 0.13);
+  font-size: 18px;
+}
+.btn.print:hover {
+  background: linear-gradient(135deg, #27449C 0%, #5D79E6 100%);
+  box-shadow: 0 12px 28px rgba(93, 121, 230, 0.18);
+}
+
+/* Remove caret style, replaced by print */
+.btn.caret { display: none !important; }
+
+/* Beautify filter/action bar */
+.beautify-bar {
+  background: linear-gradient(90deg, #f7faff 60%, #eaf0ff 100%);
+  border-radius: 18px;
+  box-shadow: 0 4px 18px rgba(46, 74, 168, 0.07);
+  padding: 18px 18px 10px 18px;
+  margin-bottom: 10px;
+  border: 1px solid #e3eafc;
+}
+.beautify-btn-split {
+  gap: 8px;
 }
 
 /* ===== Filter rows ===== */
@@ -357,22 +479,5 @@ select.input{ padding-right: 42px; }
 }
 
 /* ===== Back button ===== */
-.back-fab{
-  position: absolute;
-  left: 18px;
-  bottom: 18px;
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  border: 0;
-  cursor: pointer;
-  background: #fff;
-  color: #0B1B6F;
-  box-shadow: 0 10px 22px rgba(17,24,39,0.12);
-  display: grid;
-  place-items: center;
-  transition: transform .15s ease, box-shadow .15s ease;
-}
 
-.back-fab:hover{ transform: translateY(-1px); box-shadow: 0 12px 28px rgba(17,24,39,0.18); }
-.back-fab:active{ transform: translateY(0); }
+/* Remove old back-fab style, now in header as .tool-btn.back */

@@ -1,5 +1,29 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 const ReceiveSchedule = {
+    renderStopoverRows() {
+      // Render số dòng sân bay trung gian theo tham số
+      const stopoverRows = document.getElementById('stopoverRows');
+      if (!stopoverRows) return;
+      stopoverRows.innerHTML = '';
+      const max = parseInt(this.thamSo.SoSanBayTrungGianToiDa) || 2;
+      for (let i = 1; i <= max; i++) {
+        stopoverRows.innerHTML += `
+          <div class="stopover-row">
+            <div class="stt">${i}</div>
+            <div><select class="input" id="stopAirport${i}"></select></div>
+            <div>
+              <div class="inline compact">
+                <select class="input" id="stopH${i}"></select>
+                <span class="unit">giờ</span>
+                <select class="input" id="stopM${i}"></select>
+                <span class="unit">phút</span>
+              </div>
+            </div>
+            <div><input class="input gray" id="stopNote${i}" /></div>
+          </div>
+        `;
+      }
+    },
   airports: [],
   hangVe: [],
   thamSo: {},
@@ -62,6 +86,9 @@ const ReceiveSchedule = {
 
       console.log('✅ Loaded data:', { airports: this.airports.length, hangVe: this.hangVe.length, thamSo: this.thamSo });
 
+      // Sau khi load xong tham số, render lại bảng stopover và select
+      this.renderStopoverRows();
+      this.buildSelects();
       UI.hideLoading?.();
 
     } catch (error) {
@@ -76,10 +103,16 @@ const ReceiveSchedule = {
       .map(a => `<option value="${a.ma_san_bay}">${a.ma_san_bay} - ${a.ten_san_bay}</option>`)
       .join("");
 
-    ["fromAirport","toAirport","stopAirport1","stopAirport2"].forEach(id => {
+    ["fromAirport","toAirport"].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.innerHTML = `<option value="">-- Chọn --</option>${airportOpts}`;
+      if (el) el.innerHTML = `<option value=\"\">-- Chọn --</option>${airportOpts}`;
     });
+    // Gán option cho các sân bay trung gian động
+    const max = parseInt(this.thamSo.SoSanBayTrungGianToiDa) || 2;
+    for (let i = 1; i <= max; i++) {
+      const el = document.getElementById(`stopAirport${i}`);
+      if (el) el.innerHTML = `<option value=\"\">-- Chọn --</option>${airportOpts}`;
+    }
 
     const $ = (id) => document.getElementById(id);
     const seatClass = $('seatClass');
@@ -91,10 +124,10 @@ const ReceiveSchedule = {
 
     this.fillNumberSelect("durationHours", 0, 23, true);
     this.fillNumberSelect("durationMinutes", 0, 59, true);
-    this.fillNumberSelect("stopH1", 0, 23, true);
-    this.fillNumberSelect("stopM1", 0, 59, true);
-    this.fillNumberSelect("stopH2", 0, 23, true);
-    this.fillNumberSelect("stopM2", 0, 59, true);
+    for (let i = 1; i <= max; i++) {
+      this.fillNumberSelect(`stopH${i}`, 0, 23, true);
+      this.fillNumberSelect(`stopM${i}`, 0, 59, true);
+    }
 
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -192,13 +225,24 @@ const ReceiveSchedule = {
 
   clearForm() {
     const $ = (id) => document.getElementById(id);
-    
-    ["flightCode","ticketPrice","departHH","departMM","seatQty","stopNote1","stopNote2"].forEach(id => {
+    ["flightCode","ticketPrice","departHH","departMM","seatQty"].forEach(id => {
       const el = $(id);
       if (el) el.value = "";
     });
-    
-    ["fromAirport","toAirport","stopAirport1","stopAirport2","seatClass"].forEach(id => {
+    // Xóa các trường động sân bay trung gian
+    const max = parseInt(this.thamSo.SoSanBayTrungGianToiDa) || 2;
+    for (let i = 1; i <= max; i++) {
+      [
+        `stopNote${i}`,
+        `stopAirport${i}`,
+        `stopH${i}`,
+        `stopM${i}`
+      ].forEach(id => {
+        const el = $(id);
+        if (el) el.value = "";
+      });
+    }
+    ["fromAirport","toAirport","seatClass"].forEach(id => {
       const el = $(id);
       if (el) el.value = "";
     });
@@ -208,7 +252,7 @@ const ReceiveSchedule = {
     // Tự động tạo lại mã chuyến bay mới
     this.loadNextFlightCode();
 
-    UI.toast("Đã xoá form", "warn");
+    UI.toast("Đã xoá thông tin", "warn");
   },
 
   async saveFlight() {
@@ -284,56 +328,28 @@ const ReceiveSchedule = {
 
     const san_bay_trung_gian = [];
     
-    const stop1 = $("stopAirport1")?.value;
-    if (stop1) {
-      const stopH1 = parseInt($("stopH1")?.value || 0);
-      const stopM1 = parseInt($("stopM1")?.value || 0);
-      const thoiGianDung1 = stopH1 * 60 + stopM1;
-      
-      console.log('📍 Stop 1:', { stopH1, stopM1, thoiGianDung1, min: thoiGianDungMin, max: thoiGianDungMax });
-      
-      // ✅ Kiểm tra bắt buộc: nếu chọn sân bay thì phải có thời gian dừng > 0
-      if (thoiGianDung1 <= 0) {
-        return UI.toast("❌ Sân bay trung gian 1: bắt buộc nhập thời gian dừng", "warn");
+    // Duyệt động các trường sân bay trung gian
+    const maxStop = parseInt(this.thamSo.SoSanBayTrungGianToiDa) || 2;
+    for (let i = 1; i <= maxStop; i++) {
+      const stopVal = $("stopAirport" + i)?.value;
+      if (stopVal) {
+        const stopH = parseInt($("stopH" + i)?.value || 0);
+        const stopM = parseInt($("stopM" + i)?.value || 0);
+        const thoiGianDung = stopH * 60 + stopM;
+        // Kiểm tra bắt buộc: nếu chọn sân bay thì phải có thời gian dừng > 0
+        if (thoiGianDung <= 0) {
+          return UI.toast(`❌ Sân bay trung gian ${i}: bắt buộc nhập thời gian dừng`, "warn");
+        }
+        // Kiểm tra min/max
+        if (thoiGianDung < thoiGianDungMin || thoiGianDung > thoiGianDungMax) {
+          return UI.toast(`❌ Sân bay ${i}: Thời gian dừng phải từ ${thoiGianDungMin} đến ${thoiGianDungMax} phút`, "warn");
+        }
+        san_bay_trung_gian.push({
+          ma_san_bay: stopVal,
+          thoi_gian_dung: thoiGianDung,
+          ghi_chu: $("stopNote" + i)?.value || ''
+        });
       }
-      
-      // ✅ Kiểm tra min/max
-      if (thoiGianDung1 < thoiGianDungMin || thoiGianDung1 > thoiGianDungMax) {
-        console.log('❌ Stop 1 validation failed:', { thoiGianDung1, thoiGianDungMin, thoiGianDungMax });
-        return UI.toast(`❌ Sân bay 1: Thời gian dừng phải từ ${thoiGianDungMin} đến ${thoiGianDungMax} phút`, "warn");
-      }
-      
-      san_bay_trung_gian.push({
-        ma_san_bay: stop1,
-        thoi_gian_dung: thoiGianDung1,
-        ghi_chu: $("stopNote1")?.value || ''
-      });
-    }
-
-    const stop2 = $("stopAirport2")?.value;
-    if (stop2) {
-      const stopH2 = parseInt($("stopH2")?.value || 0);
-      const stopM2 = parseInt($("stopM2")?.value || 0);
-      const thoiGianDung2 = stopH2 * 60 + stopM2;
-      
-      console.log('📍 Stop 2:', { stopH2, stopM2, thoiGianDung2, min: thoiGianDungMin, max: thoiGianDungMax });
-      
-      // ✅ Kiểm tra bắt buộc: nếu chọn sân bay thì phải có thời gian dừng > 0
-      if (thoiGianDung2 <= 0) {
-        return UI.toast("❌ Sân bay trung gian 2: bắt buộc nhập thời gian dừng", "warn");
-      }
-      
-      // ✅ Kiểm tra min/max
-      if (thoiGianDung2 < thoiGianDungMin || thoiGianDung2 > thoiGianDungMax) {
-        console.log('❌ Stop 2 validation failed:', { thoiGianDung2, thoiGianDungMin, thoiGianDungMax });
-        return UI.toast(`❌ Sân bay 2: Thời gian dừng phải từ ${thoiGianDungMin} đến ${thoiGianDungMax} phút`, "warn");
-      }
-      
-      san_bay_trung_gian.push({
-        ma_san_bay: stop2,
-        thoi_gian_dung: thoiGianDung2,
-        ghi_chu: $("stopNote2")?.value || ''
-      });
     }
 
     // Validate số sân bay trung gian
