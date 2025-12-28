@@ -424,7 +424,7 @@ const Lookup = {
       const temp = from.value;
       from.value = to.value;
       to.value = temp;
-      showToast('🔁 Đã đổi chiều', 'success');
+      showToast('Đã đổi chiều', 'success');
     }
   },
 

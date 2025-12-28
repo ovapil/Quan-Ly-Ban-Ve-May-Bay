@@ -278,7 +278,7 @@ const Report = {
     // session check (nhẹ)
     const token = getToken();
     if (!token) {
-      UI.toast("❌ Bạn chưa đăng nhập", "warn");
+      UI.toast("Bạn chưa đăng nhập", "warn");
       this.go("index.html");
       return;
     }
@@ -368,14 +368,14 @@ const Report = {
   reset() {
     if (this.els.quickSearch) this.els.quickSearch.value = "";
     if (this.els.tableSearch) this.els.tableSearch.value = "";
-    UI.toast("✅ Đã làm mới bộ lọc", "success");
+    UI.toast("Đã làm mới bộ lọc", "success");
     this.applyFilterAndRenderTable();
   },
 
   async generate() {
     const token = getToken();
     if (!token) {
-      UI.toast("❌ Bạn chưa đăng nhập", "warn");
+      UI.toast("Bạn chưa đăng nhập", "warn");
       this.go("index.html");
       return;
     }
@@ -387,21 +387,21 @@ const Report = {
     if (type === "month") {
       const month = String(this.els.monthInput?.value || "").trim();
       if (!/^\d{4}-\d{2}$/.test(month)) {
-        UI.toast("❌ Vui lòng chọn Tháng (YYYY-MM)", "warn");
+        UI.toast("Vui lòng chọn Tháng (YYYY-MM)", "warn");
         return;
       }
       url = `${API_BASE_URL}/reports/month?month=${encodeURIComponent(month)}&status=${encodeURIComponent(status)}`;
     } else {
       const year = String(this.els.yearInput?.value || "").trim();
       if (!/^\d{4}$/.test(year)) {
-        UI.toast("❌ Vui lòng nhập Năm (YYYY)", "warn");
+        UI.toast("Vui lòng nhập Năm (YYYY)", "warn");
         return;
       }
       url = `${API_BASE_URL}/reports/year?year=${encodeURIComponent(year)}&status=${encodeURIComponent(status)}`;
     }
 
     try {
-      UI.toast("⏳ Đang tải dữ liệu...", "warn");
+      UI.toast("Đang tải dữ liệu...", "warn");
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -422,11 +422,11 @@ const Report = {
       if (this.els.statusFilter) this.els.statusFilter.value = this.state.status;
       this.applyTypeUI();
 
-      UI.toast("✅ Đã tải báo cáo", "success");
+      UI.toast("Đã tải báo cáo", "success");
       this.render();
     } catch (e) {
       console.error("Generate report error:", e);
-      UI.toast(`❌ ${e.message}`, "warn");
+      UI.toast(`${e.message}`, "warn");
     }
   },
 
@@ -627,7 +627,7 @@ const Report = {
   exportCSV() {
     const items = this.state.filteredItems || [];
     if (!items.length) {
-      UI.toast("❌ Không có dữ liệu để xuất", "warn");
+      UI.toast("Không có dữ liệu để xuất", "warn");
       return;
     }
 
@@ -690,7 +690,7 @@ const Report = {
     a.remove();
     URL.revokeObjectURL(url);
 
-    UI.toast("✅ Đã xuất CSV", "success");
+    UI.toast("Đã xuất CSV", "success");
   },
 };
 

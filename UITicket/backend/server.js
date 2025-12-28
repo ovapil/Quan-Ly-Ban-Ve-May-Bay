@@ -1749,7 +1749,6 @@ app.delete('/api/admin/airports/:code', verifyToken, requireAdmin, async (req, r
   }
 });
 
-
 // ============================================
 // ADMIN: CLASS MANAGEMENT (HẠNG VÉ)
 // ============================================
@@ -1876,25 +1875,6 @@ app.post('/api/admin/parameters', verifyToken, requireAdmin, async (req, res) =>
   }
 });
 
-app.put('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
-  const name = String(req.params.name).trim();
-  const { value } = req.body || {};
-  try {
-    if (!value) return res.status(400).json({ error: 'Giá trị là bắt buộc' });
-    const result = await pool.query(
-      'UPDATE tham_so SET gia_tri = $1 WHERE ten_tham_so = $2 RETURNING ten_tham_so, gia_tri, mo_ta',
-      [value, name]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Tham số không tồn tại' });
-    }
-    res.json({ message: 'Đã cập nhật tham số', parameter: result.rows[0] });
-  } catch (error) {
-    console.error('PUT /api/admin/parameters/:name error:', error);
-    res.status(500).json({ error: 'Lỗi server' });
-  }
-});
-
 app.delete('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
   const name = String(req.params.name).trim();
 
@@ -1971,7 +1951,6 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     await client.query('BEGIN');
 
     // ========== BƯỚC 1: LẤY THAM SỐ HỆ THỐNG ==========
-
     const thamSoResult = await client.query('SELECT * FROM tham_so');
     const thamSo = {};
     thamSoResult.rows.forEach(row => {
@@ -1981,7 +1960,7 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     console.log('📋 Tham số hệ thống:', thamSo);
 
     // ========== BƯỚC 2: VALIDATE DỮ LIỆU ==========
-
+    
     // Validate thông tin cơ bản
     if (!ma_chuyen_bay || !san_bay_di || !san_bay_den || !gia_ve || !ngay_gio_bay || !thoi_gian_bay) {
       throw new Error('Thiếu thông tin chuyến bay bắt buộc');
@@ -2019,7 +1998,6 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     }
 
     // ========== BƯỚC 3: KIỂM TRA MÃ CHUYẾN BAY ĐÃ TỒN TẠI ==========
-
     const existingFlight = await client.query(
       'SELECT ma_chuyen_bay FROM chuyen_bay WHERE ma_chuyen_bay = $1',
       [ma_chuyen_bay]
@@ -2030,7 +2008,6 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     }
 
     // ========== BƯỚC 4: LƯU CHUYẾN BAY ==========
-
     await client.query(
       `INSERT INTO chuyen_bay 
        (ma_chuyen_bay, san_bay_di, san_bay_den, gia_ve, ngay_gio_bay, thoi_gian_bay, trang_thai)
@@ -2041,7 +2018,6 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     console.log(`✅ Đã lưu chuyến bay: ${ma_chuyen_bay}`);
 
     // ========== BƯỚC 5: LƯU HẠNG VÉ ==========
-
     for (const hv of hang_ve) {
       await client.query(
         `INSERT INTO chuyen_bay_hang_ve (ma_chuyen_bay, ma_hang_ve, so_luong_ghe)
@@ -2052,7 +2028,6 @@ app.post('/api/chuyen-bay', verifyToken, async (req, res) => {
     }
 
     // ========== BƯỚC 6: LƯU SÂN BAY TRUNG GIAN ==========
-
     if (san_bay_trung_gian && san_bay_trung_gian.length > 0) {
       for (let i = 0; i < san_bay_trung_gian.length; i++) {
         const sb = san_bay_trung_gian[i];
@@ -2153,11 +2128,11 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
         cb.gia_ve,
         cb.ngay_gio_bay,
         cb.thoi_gian_bay,
+        (cb.ngay_gio_bay < NOW()) AS departed,
         cb.san_bay_di  AS ma_san_bay_di,
         cb.san_bay_den AS ma_san_bay_den,
         sb_di.ten_san_bay  AS san_bay_di,
         sb_den.ten_san_bay AS san_bay_den,
-        cb.trang_thai,
 
         COALESCE(SUM(chv.so_luong_ghe), 0) AS tong_ghe,
         COALESCE(SUM(chv.so_ghe_da_ban), 0) AS ghe_da_ban,
@@ -2186,7 +2161,8 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
               'ten_san_bay', sb_tg.ten_san_bay,
               'thanh_pho', sb_tg.thanh_pho,
               'thoi_gian_dung', ctsg.thoi_gian_dung,
-              'ghi_chu', ctsg.ghi_chu
+              'ghi_chu', ctsg.ghi_chu,
+              'thu_tu_dung', ctsg.thu_tu_dung
             ) ORDER BY ctsg.thu_tu_dung)
             FROM chi_tiet_san_bay_trung_gian ctsg
             LEFT JOIN san_bay sb_tg ON sb_tg.ma_san_bay = ctsg.ma_san_bay
@@ -2202,7 +2178,7 @@ app.get('/api/chuyen-bay', verifyToken, async (req, res) => {
       ${where}
       GROUP BY
         cb.ma_chuyen_bay, cb.gia_ve, cb.ngay_gio_bay, cb.thoi_gian_bay,
-        cb.san_bay_di, cb.san_bay_den, sb_di.ten_san_bay, sb_den.ten_san_bay, cb.trang_thai
+        cb.san_bay_di, cb.san_bay_den, sb_di.ten_san_bay, sb_den.ten_san_bay
       ${having}
       -- Order upcoming flights first, then departed flights last
       ORDER BY (cb.ngay_gio_bay < NOW()) ASC, cb.ngay_gio_bay ASC
@@ -2272,7 +2248,7 @@ async function getFlightWithSeats(client, ma_chuyen_bay) {
 
       COALESCE(SUM(chv.so_luong_ghe), 0) AS tong_ghe,
       COALESCE(SUM(chv.so_ghe_da_ban), 0) AS ghe_da_ban,
-      COALESCE(SUM(COALESCE(chv.so_ghe_da_dat,0)), 0) AS ghe_da_dat,
+        COALESCE(SUM(COALESCE(chv.so_ghe_da_dat,0)), 0) AS ghe_da_dat,
       COALESCE(SUM(chv.so_luong_ghe - chv.so_ghe_da_ban - COALESCE(chv.so_ghe_da_dat,0)), 0) AS ghe_con_lai,
 
       COALESCE(
@@ -2283,8 +2259,8 @@ async function getFlightWithSeats(client, ma_chuyen_bay) {
             'ti_le_gia', hv.ti_le_gia,
             'so_luong_ghe', COALESCE(chv.so_luong_ghe, 0),
             'da_ban', COALESCE(chv.so_ghe_da_ban, 0),
-            'da_dat', COALESCE(chv.so_ghe_da_dat, 0),
-            'con_lai', (COALESCE(chv.so_luong_ghe, 0) - COALESCE(chv.so_ghe_da_ban, 0) - COALESCE(chv.so_ghe_da_dat,0))
+              'da_dat', COALESCE(chv.so_ghe_da_dat, 0),
+              'con_lai', (COALESCE(chv.so_luong_ghe, 0) - COALESCE(chv.so_ghe_da_ban, 0) - COALESCE(chv.so_ghe_da_dat,0))
           )
           ORDER BY hv.ti_le_gia DESC
         ) FILTER (WHERE chv.ma_hang_ve IS NOT NULL),
@@ -2383,7 +2359,7 @@ app.post('/api/ban-ve', verifyToken, async (req, res) => {
        ON CONFLICT (cmnd)
        DO UPDATE SET ho_ten = EXCLUDED.ho_ten, sdt = EXCLUDED.sdt
        RETURNING id, ho_ten, cmnd, sdt`,
-      [ho_ten, cmnd, sdt]
+      [String(ho_ten).trim(), String(cmnd).trim(), String(sdt).trim()]
     );
     const pax = paxRes.rows[0];
 
@@ -2395,7 +2371,7 @@ app.post('/api/ban-ve', verifyToken, async (req, res) => {
        WHERE cb.ma_chuyen_bay = $1`,
       [ma_chuyen_bay, ma_hang_ve]
     );
-    if (priceRes.rowCount === 0) throw new Error("Không tính được giá vé");
+    if (priceRes.rowCount === 0) throw new Error('Không tính được giá vé');
 
     const base = Number(priceRes.rows[0].gia_co_ban);
     const ratio = Number(priceRes.rows[0].ti_le_gia);
@@ -2792,7 +2768,7 @@ app.get('/api/passengers', verifyToken, async (req, res) => {
         UNION ALL
 
         SELECT
-          v.id::text AS id,
+          v.id::text AS entry_id,
           COALESCE(NULLIF(hk.cmnd, ''), NULLIF(hk.sdt, '')) AS key_id,
           hk.ho_ten AS ho_ten,
           hk.cmnd,
@@ -2968,13 +2944,13 @@ app.post('/api/passengers', verifyToken, async (req, res) => {
 app.put('/api/passengers/:key', verifyToken, async (req, res) => {
   try {
     const key = String(req.params.key || '').trim();
-    const { ho_ten, cmnd, sdt } = req.body || {};
+    const { ho_ten, sdt } = req.body || {};
     if (!key) return res.status(400).json({ error: 'Missing key' });
-    // Distinguish between DB numeric id and CMND/SĐT which are also numeric strings.
-    // Treat as DB id only if it's a short numeric value (e.g. <= 6 digits).
-    const isNumericId = (/^\d+$/.test(key) && key.length <= 6);
+    if (!ho_ten || !ho_ten.trim()) return res.status(400).json({ error: 'Họ tên không được để trống' });
+    if (!sdt || !/^\d{10}$/.test(sdt)) return res.status(400).json({ error: 'Số điện thoại phải đúng 10 chữ số' });
 
-    // 1) Find existing hanh_khach if any (to get old cmnd/sdt for ripple updates)
+    // Tìm đúng passenger
+    const isNumericId = (/^\d+$/.test(key) && key.length <= 6);
     let hkBefore = null;
     if (isNumericId) {
       const r0 = await pool.query('SELECT * FROM hanh_khach WHERE id=$1', [parseInt(key)]);
@@ -2983,56 +2959,15 @@ app.put('/api/passengers/:key', verifyToken, async (req, res) => {
       const r0 = await pool.query('SELECT * FROM hanh_khach WHERE cmnd=$1 OR sdt=$1 LIMIT 1', [key]);
       hkBefore = r0.rows[0] || null;
     }
+    if (!hkBefore) return res.status(404).json({ error: 'Không tìm thấy hành khách' });
 
-    // 2) Update or insert hanh_khach
-    let hk = null;
-    if (hkBefore) {
-      const r = await pool.query(
-        `UPDATE hanh_khach SET ho_ten = $1, cmnd = $2, sdt = $3 WHERE id = $4 RETURNING *`,
-        [ho_ten || hkBefore.ho_ten, cmnd || hkBefore.cmnd, sdt || hkBefore.sdt, hkBefore.id]
-      );
-      hk = r.rows[0];
-    } else {
-      const insertQ = `INSERT INTO hanh_khach (ho_ten, cmnd, sdt, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *`;
-      const insertVals = [ho_ten || null, cmnd || (isNumericId ? null : key) || null, sdt || (isNumericId ? null : key) || null];
-      const ins = await pool.query(insertQ, insertVals);
-      hk = ins.rows[0];
-    }
-
-    // 3) Ripple updates to giao_dich_ve so the stored cmnd/dien_thoai/hanh_khach text also reflect changes
-    const oldCmnd = hkBefore && hkBefore.cmnd ? hkBefore.cmnd : null;
-    const oldSdt = hkBefore && hkBefore.sdt ? hkBefore.sdt : null;
-    const routeKey = key;
-
-    try {
-      // Only sync text snapshot for bookings (dat_cho) to avoid overwriting historical sold tickets
-      await pool.query(
-        `UPDATE giao_dich_ve SET hanh_khach = $1, cmnd = $2, dien_thoai = $3
-         WHERE ( (cmnd IS NOT NULL AND (cmnd = $4 OR cmnd = $7))
-                 OR (dien_thoai IS NOT NULL AND (dien_thoai = $5 OR dien_thoai = $7))
-                 OR (cmnd IS NULL AND dien_thoai IS NULL AND (cmnd = $7 OR dien_thoai = $7)) )
-           AND (loai = 'dat_cho' OR trang_thai = 'Đặt chỗ')`,
-        [hk ? hk.ho_ten : ho_ten, hk ? hk.cmnd : cmnd, hk ? hk.sdt : sdt, oldCmnd, oldSdt, routeKey, routeKey]
-      );
-    } catch (err) {
-      console.warn('Ripple update giao_dich_ve (bookings only) failed:', err.message);
-    }
-
-    // 4) Try linking ve rows that weren't linked to hanh_khach (if any) to the hk we just created/updated
-    if (!hkBefore && hk && (hk.cmnd || hk.sdt)) {
-      try {
-        await pool.query(
-          `UPDATE ve SET hanh_khach_id = $1
-           FROM hanh_khach hk2
-           WHERE ve.hanh_khach_id IS NULL AND (hk2.cmnd = $2 OR hk2.sdt = $3) AND hk2.id = $1`,
-          [hk.id, hk.cmnd, hk.sdt]
-        );
-      } catch (err) {
-        console.warn('Attempt to link ve to new hanh_khach failed:', err.message);
-      }
-    }
-
-    return res.json({ passenger: hk, created: !hkBefore });
+    // KHÔNG cho sửa cmnd
+    const r = await pool.query(
+      `UPDATE hanh_khach SET ho_ten = $1, sdt = $2 WHERE id = $3 RETURNING *`,
+      [ho_ten, sdt, hkBefore.id]
+    );
+    const hk = r.rows[0];
+    return res.json({ ok: true, passenger: hk });
   } catch (e) {
     console.error('PUT /api/passengers/:key error:', e);
     res.status(500).json({ error: e.message || 'Lỗi server' });
@@ -3041,56 +2976,6 @@ app.put('/api/passengers/:key', verifyToken, async (req, res) => {
 
 // Delete passenger by id or key (cmnd or sdt)
 app.delete('/api/passengers/:key', verifyToken, async (req, res) => {
-  try {
-    const key = String(req.params.key || '').trim();
-    if (!key) return res.status(400).json({ error: 'Missing key' });
-
-    const isNumericId = (/^\d+$/.test(key) && key.length <= 6);
-
-    // Find existing hanh_khach (if any) to know old cmnd/sdt
-    let hkBefore = null;
-    if (isNumericId) {
-      const r0 = await pool.query('SELECT * FROM hanh_khach WHERE id=$1', [parseInt(key)]);
-      hkBefore = r0.rows[0] || null;
-    } else {
-      const r0 = await pool.query('SELECT * FROM hanh_khach WHERE cmnd=$1 OR sdt=$1 LIMIT 1', [key]);
-      hkBefore = r0.rows[0] || null;
-    }
-
-    const oldCmnd = hkBefore && hkBefore.cmnd ? hkBefore.cmnd : null;
-    const oldSdt = hkBefore && hkBefore.sdt ? hkBefore.sdt : null;
-    const routeKey = key;
-
-    // Anonymize hanh_khach if exists
-    if (hkBefore) {
-      await pool.query(`UPDATE hanh_khach SET ho_ten = '[Đã xóa]', cmnd = NULL, sdt = NULL WHERE id = $1`, [hkBefore.id]);
-    }
-
-    // Clear sensitive fields in giao_dich_ve for matching rows
-    try {
-      await pool.query(
-        `UPDATE giao_dich_ve SET hanh_khach = '[Đã xóa]', cmnd = NULL, dien_thoai = NULL
-         WHERE (cmnd IS NOT NULL AND (cmnd = $1 OR cmnd = $4))
-            OR (dien_thoai IS NOT NULL AND (dien_thoai = $2 OR dien_thoai = $4))
-            OR (cmnd IS NULL AND dien_thoai IS NULL AND (cmnd = $4 OR dien_thoai = $4))`,
-        [oldCmnd, oldSdt, hkBefore ? hkBefore.id : null, routeKey]
-      );
-    } catch (err) {
-      console.warn('Anonymize giao_dich_ve failed:', err.message);
-    }
-
-    // For ve table, try to nullify hanh_khach_id if it points to this passenger (may fail if FK prevents it)
-    if (hkBefore) {
-      try {
-        await pool.query('UPDATE ve SET hanh_khach_id = NULL WHERE hanh_khach_id = $1', [hkBefore.id]);
-      } catch (err) {
-        console.warn('Failed to nullify ve.hanh_khach_id:', err.message);
-      }
-    }
-
-    return res.json({ success: true, anonymized: true });
-  } catch (e) {
-    console.error('DELETE /api/passengers/:key error:', e);
-    res.status(500).json({ error: e.message || 'Lỗi server' });
-  }
+  // Vô hiệu hóa xóa hành khách để bảo toàn lịch sử giao dịch
+  res.status(405).json({ error: 'Delete passenger is disabled to preserve transaction history' });
 });

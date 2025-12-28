@@ -166,15 +166,7 @@ const Passenger = {
       });
     }
 
-    // Delete button
-    const btnDelete = document.getElementById('btnDelete');
-    if (btnDelete) {
-      btnDelete.addEventListener('click', () => {
-        if (PassengerState.selectedPassenger) {
-          this.openDeleteModal(PassengerState.selectedPassenger);
-        }
-      });
-    }
+    // Đã bỏ nút XÓA hành khách
 
     // Pagination
     const btnPrevPage = document.getElementById('btnPrevPage');
@@ -385,9 +377,6 @@ const Passenger = {
           <div class="action-btns">
             <button class="btn-action edit" title="Sửa" onclick="Passenger.openEditModal(${p.id})">
               <i class="fa-solid fa-pen"></i>
-            </button>
-            <button class="btn-action delete" title="Xóa" onclick="Passenger.openDeleteModal(${p.id})">
-              <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </td>
@@ -615,6 +604,7 @@ const Passenger = {
     document.getElementById('passengerId').value = p.id;
     document.getElementById('inputName').value = p.ho_ten || '';
     document.getElementById('inputCmnd').value = p.cmnd || '';
+    document.getElementById('inputCmnd').setAttribute('readonly', 'readonly');
     document.getElementById('inputPhone').value = p.sdt || '';
     this.clearErrors();
     document.getElementById('passengerModal').classList.remove('hidden');
@@ -732,39 +722,7 @@ const Passenger = {
     }
   },
 
-  // Delete passenger
-  async deletePassenger(id) {
-    try {
-      const token = getToken();
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-
-      const res = await fetch(`${API_BASE_URL}/passengers/${id}`, { 
-        method: 'DELETE', 
-        headers 
-      });
-
-      if (!res.ok) {
-        throw new Error(`Failed to delete: ${res.status}`);
-      }
-    } catch (e) {
-      console.warn('API delete failed:', e);
-    }
-
-    // Remove from local state
-    PassengerState.passengers = PassengerState.passengers.filter(p => p.id != id);
-    PassengerState.selectedPassenger = null;
-    
-    document.getElementById('noSelection').style.display = 'block';
-    document.getElementById('detailContent').style.display = 'none';
-    // collapse detail panel
-    const detailPanel = document.querySelector('.passenger-detail-section .panel');
-    if (detailPanel) detailPanel.classList.remove('expanded');
-    
-    this.closeDeleteModal();
-    this.applyFilters();
-    this.updateStats();
-    UI.toast('Xóa hành khách thành công!', 'success');
-  },
+  // Đã loại bỏ chức năng xóa hành khách
 
   // Clear form errors
   clearErrors() {

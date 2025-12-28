@@ -122,9 +122,11 @@ const Dashboard = {
 
     const grid = document.getElementById("dashboardGrid") || document.querySelector(".grid");
     const userMgmtTile = document.getElementById("userMgmtBtn");
+    const notifBtn = document.querySelector('.actions .icon-btn[aria-label="Notifications"]');
 
     if (grid) grid.classList.toggle("admin-grid", isAdmin(user));
     if (userMgmtTile) userMgmtTile.style.display = isAdmin(user) ? "" : "none";
+    if (notifBtn) notifBtn.style.display = isAdmin(user) ? "" : "none";
   },
 
   initAvatar() {
@@ -238,24 +240,7 @@ const Dashboard = {
       
       if (box) {
         if (!data.items?.length) {
-          box.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Không có yêu cầu pending          app.put('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
-            const name = String(req.params.name).trim();
-            const { value } = req.body || {};
-            try {
-              if (!value) return res.status(400).json({ error: 'Giá trị là bắt buộc' });
-              const result = await pool.query(
-                'UPDATE tham_so SET gia_tri = $1 WHERE ten_tham_so = $2 RETURNING ten_tham_so, gia_tri, mo_ta',
-                [value, name]
-              );
-              if (result.rows.length === 0) {
-                return res.status(404).json({ error: 'Tham số không tồn tại' });
-              }
-              res.json({ message: 'Đã cập nhật tham số', parameter: result.rows[0] });
-            } catch (error) {
-              console.error('PUT /api/admin/parameters/:name error:', error);
-              res.status(500).json({ error: 'Lỗi server' });
-            }
-          });</p>`;
+          box.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;">Không có yêu cầu pending</p>`;
           return;
         }
 
@@ -353,7 +338,7 @@ const Dashboard = {
     const user = JSON.parse(localStorage.getItem("uiticket_user") || "{}");
 
     if (!isAdmin(user)) {
-      UI.toast("🔔 Hiện chưa có thông báo dành cho Staff (demo)", "warn");
+      UI.toast("Hiện chưa có thông báo dành cho Staff (demo)", "warn");
       return;
     }
 
@@ -1345,18 +1330,18 @@ Object.assign(Dashboard, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
+      
       if (!data.parameters) {
         list.innerHTML = '<div class="info-empty">Chưa có tham số nào</div>';
         return;
       }
+
       list.innerHTML = data.parameters.map(p => `
         <div class="info-item">
           <div class="info-item-main">
             <div class="info-item-code">${escapeHtml(p.ten_tham_so)}</div>
             <div class="info-item-details">
-              <div class="info-item-name param-value" data-name="${escapeHtml(p.ten_tham_so)}">
-                ${escapeHtml(p.gia_tri)}
-              </div>
+              <div class="info-item-name">${escapeHtml(p.gia_tri)}</div>
               <div class="info-item-subtext">${escapeHtml(p.mo_ta || '(không có mô tả)')}</div>
             </div>
           </div>
@@ -1365,62 +1350,81 @@ Object.assign(Dashboard, {
           </button>
         </div>
       `).join('');
-      // Gán sự kiện click cho từng giá trị tham số
-      document.querySelectorAll('.param-value').forEach(el => {
-        el.addEventListener('click', function(e) {
-          if (el.querySelector('input')) return;
-          const name = el.getAttribute('data-name');
-          const oldValue = el.textContent.trim();
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.value = oldValue;
-          input.className = 'param-edit-input';
-          input.style.width = '120px';
-          input.addEventListener('keydown', (ev) => {
-            if (ev.key === 'Enter') Dashboard.saveParameterValue(name, input.value);
-            if (ev.key === 'Escape') Dashboard.loadParameters();
-          });
-          const saveBtn = document.createElement('button');
-          saveBtn.textContent = 'Lưu';
-          saveBtn.className = 'param-save-btn';
-          saveBtn.onclick = () => Dashboard.saveParameterValue(name, input.value);
-          el.innerHTML = '';
-          el.appendChild(input);
-          el.appendChild(saveBtn);
-          input.focus();
-        });
-      });
     } catch (error) {
       console.error('Load parameters error:', error);
       UI.toast('Lỗi tải tham số', 'warn');
     }
   },
 
-  async saveParameterValue(name, newValue) {
-    if (!newValue?.trim()) {
-      UI.toast('Giá trị không được để trống', 'warn');
+  async addParameter() {
+    const token = localStorage.getItem("uiticket_token");
+    const name = document.getElementById("paramName")?.value?.trim();
+    const value = document.getElementById("paramValue")?.value?.trim();
+    const desc = document.getElementById("paramDesc")?.value?.trim();
+
+    if (!name || !value) {
+      UI.toast("Vui lòng nhập tên & giá trị tham số", "warn");
       return;
     }
-    const token = localStorage.getItem("uiticket_token");
+
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/parameters/${encodeURIComponent(name)}`, {
-        method: 'PUT',
+      const res = await fetch(`${API_BASE_URL}/admin/parameters`, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ value: newValue })
+        body: JSON.stringify({ name, value, desc })
       });
       const data = await res.json();
+      
       if (!res.ok) {
-        UI.toast(`${data.error || 'Lỗi cập nhật tham số'}`, 'warn');
+        UI.toast(`${data.error || 'Lỗi thêm tham số'}`, 'warn');
         return;
       }
-      UI.toast('Đã cập nhật tham số', 'success');
+
+      UI.toast("Thêm tham số thành công", "success");
+      document.getElementById("paramName").value = '';
+      document.getElementById("paramValue").value = '';
+      document.getElementById("paramDesc").value = '';
       this.loadParameters();
     } catch (error) {
-      console.error('Update parameter error:', error);
-      UI.toast('Lỗi cập nhật tham số', 'warn');
+      console.error('Add parameter error:', error);
+      UI.toast('Lỗi thêm tham số', 'warn');
+    }
+  },
+
+  async deleteParameter(name) {
+    const confirmed = await UI.confirm({
+      title: "Xóa tham số",
+      message: `Bạn có chắc muốn xóa tham số ${escapeHtml(name)} này?`,
+      confirmText: "Xóa",
+      cancelText: "Hủy",
+      type: "danger",
+      icon: "fa-trash"
+    });
+
+    if (!confirmed) return;
+
+    const token = localStorage.getItem("uiticket_token");
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/parameters/${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        UI.toast(`${data.error || 'Lỗi xóa tham số'}`, 'warn');
+        return;
+      }
+
+      UI.toast("Đã xóa tham số", "success");
+      this.loadParameters();
+    } catch (error) {
+      console.error('Delete parameter error:', error);
+      UI.toast('Lỗi xóa tham số', 'warn');
     }
   }
 });

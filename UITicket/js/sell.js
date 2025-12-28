@@ -315,7 +315,7 @@ minutesToText(min) {
 
   async init() {
     if (isPreviewMode()) {
-      UI.toast("👀 Preview UI (không cần đăng nhập)", "warn");
+      UI.toast("Preview UI (không cần đăng nhập)", "warn");
       this.startUI();
       return;
     }
@@ -426,9 +426,9 @@ minutesToText(min) {
       lastTicketQuery = String(document.getElementById("ticketSearchInput")?.value || "").trim();
       try {
         await loadTicketsFromApi(fmtMoney);
-        UI.toast("🔎 Đã tìm kiếm", "success");
+        UI.toast("Đã tìm kiếm", "success");
       } catch (e) {
-        UI.toast(`❌ ${e.message}`, "error");
+        UI.toast(`${e.message}`, "error");
       }
     });
 
@@ -447,15 +447,15 @@ minutesToText(min) {
     document.getElementById("btnRefreshTicket")?.addEventListener("click", async () => {
       try {
         await loadTicketsFromApi(fmtMoney);
-        UI.toast("🔄 Đã làm mới", "success");
+        UI.toast("Đã làm mới", "success");
       } catch (e) {
-        UI.toast(`❌ ${e.message}`, "error");
+        UI.toast(`${e.message}`, "error");
       }
     });
 
     // initial load
     loadTicketsFromApi(fmtMoney).catch((e) => {
-      UI.toast(`❌ ${e.message}`, "error");
+      UI.toast(`${e.message}`, "error");
     });
   },
 
@@ -506,7 +506,7 @@ minutesToText(min) {
 
   bind() {
     if (this.el.btnNoti) {
-      this.el.btnNoti.onclick = () => UI.toast("🔔 Thông báo (demo)", "warn");
+      this.el.btnNoti.onclick = () => UI.toast("Thông báo (demo)", "warn");
     }
 
     // Header tabs
@@ -531,7 +531,7 @@ minutesToText(min) {
       const tmp = from.value;
       from.value = to.value;
       to.value = tmp;
-      UI.toast("🔁 Đã đổi sân bay đi/đến", "success");
+      UI.toast("Đã đổi sân bay đi/đến", "success");
     });
 
     this.el.ticketClass?.addEventListener("change", () => this.recalcAndValidate());
@@ -636,7 +636,7 @@ minutesToText(min) {
 
   this.renderFlights();
   this.recalcAndValidate();
-  UI.toast("🔎 Đã tìm chuyến bay", "success");
+  UI.toast("Đã tìm chuyến bay", "success");
 },
 
 
@@ -708,7 +708,7 @@ minutesToText(min) {
       btn.onclick = () => {
         this.selected = f;
         this.applySelected();
-        UI.toast(`✅ Đã chọn ${f.code}`, "success");
+        UI.toast(`Đã chọn ${f.code}`, "success");
       };
       seatCell.appendChild(btn);
     }
@@ -898,7 +898,7 @@ this.selected = updated;
 this.attemptedSell = false;
 this.validateFields(false);
 
-UI.toast(`✅ Bán vé thành công (${data.ticket?.ma_ve || "OK"})`, "success");
+UI.toast(`Bán vé thành công (${data.ticket?.ma_ve || "OK"})`, "success");
 this.applySelected();
 this.renderFlights();
 
@@ -922,7 +922,7 @@ if (document.getElementById("ticketList") && !isPreviewMode()) {
     this.hideAlert();
     this.validateFields(false);
     this.recalcAndValidate();
-    UI.toast("♻️ Đã làm mới", "success");
+    UI.toast("Đã làm mới", "success");
   },
 
   showAlert(msg) {

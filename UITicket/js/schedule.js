@@ -94,7 +94,7 @@ const ReceiveSchedule = {
     } catch (error) {
       UI.hideLoading?.();
       console.error('Load data error:', error);
-      UI.toast('❌ Không thể tải dữ liệu', 'warn');
+      UI.toast('Không thể tải dữ liệu', 'warn');
     }
   },
 
@@ -185,7 +185,7 @@ const ReceiveSchedule = {
       const seatQty = parseInt($("seatQty").value || 0);
 
       if (!seatClass || seatQty <= 0) {
-        UI.toast("❌ Vui lòng nhập số lượng ghế hợp lệ", "warn");
+        UI.toast("Vui lòng nhập số lượng ghế hợp lệ", "warn");
         return;
       }
 
@@ -195,7 +195,7 @@ const ReceiveSchedule = {
       const hangVe = this.hangVe.find(hv => hv.ma_hang_ve === seatClass);
       const tenHangVe = hangVe?.ten_hang_ve || seatClass;
 
-      UI.toast(`✅ Đã cho số ghế cho hạng ${tenHangVe}: ${seatQty} ghế`, "success");
+      UI.toast(`Đã cho số ghế cho hạng ${tenHangVe}: ${seatQty} ghế`, "success");
       console.log('📋 Seat quantities:', this.seatQuantities);
 
       $("seatQty").value = "";
@@ -269,16 +269,16 @@ const ReceiveSchedule = {
     const durationHours = parseInt($("durationHours")?.value || 0);
     const durationMinutes = parseInt($("durationMinutes")?.value || 0);
 
-    if (!ma_chuyen_bay) return UI.toast("❌ Mã chuyến bay không được tạo. Vui lòng refresh lại trang", "warn");
-    if (!san_bay_di) return UI.toast("❌ Vui lòng chọn sân bay đi", "warn");
-    if (!san_bay_den) return UI.toast("❌ Vui lòng chọn sân bay đến", "warn");
-    if (san_bay_di === san_bay_den) return UI.toast("❌ Sân bay đi và đến phải khác nhau", "warn");
-    if (!gia_ve || gia_ve <= 0) return UI.toast("❌ Vui lòng nhập giá vé hợp lệ", "warn");
-    if (!flightDate) return UI.toast("❌ Vui lòng chọn ngày bay", "warn");
-    if (!departHH || !departMM) return UI.toast("❌ Vui lòng nhập giờ khởi hành", "warn");
+    if (!ma_chuyen_bay) return UI.toast("Mã chuyến bay không được tạo. Vui lòng refresh lại trang", "warn");
+    if (!san_bay_di) return UI.toast("Vui lòng chọn sân bay đi", "warn");
+    if (!san_bay_den) return UI.toast("Vui lòng chọn sân bay đến", "warn");
+    if (san_bay_di === san_bay_den) return UI.toast("Sân bay đi và đến phải khác nhau", "warn");
+    if (!gia_ve || gia_ve <= 0) return UI.toast("Vui lòng nhập giá vé hợp lệ", "warn");
+    if (!flightDate) return UI.toast("Vui lòng chọn ngày bay", "warn");
+    if (!departHH || !departMM) return UI.toast("Vui lòng nhập giờ khởi hành", "warn");
 
     if (Object.keys(this.seatQuantities).length === 0) {
-      return UI.toast("❌ Vui lòng nhập số lượng ghế cho ít nhất 1 hạng vé", "warn");
+      return UI.toast("Vui lòng nhập số lượng ghế cho ít nhất 1 hạng vé", "warn");
     }
 
     let hour = parseInt(departHH);
@@ -300,20 +300,20 @@ const ReceiveSchedule = {
     
     if (flightDateObj < minFlightDate) {
       const minDateStr = minFlightDate.toLocaleDateString('vi-VN');
-      return UI.toast(`❌ Ngày bay phải từ ${minDateStr} trở lại (chậm nhất ${thoiGianDatVeChamNhat} ngày)`, "warn");
+      return UI.toast(`Ngày bay phải từ ${minDateStr} trở lại (chậm nhất ${thoiGianDatVeChamNhat} ngày)`, "warn");
     }
     
     // ✅ 2. KIỂM TRA THỜI GIAN BAY TỐI THIỂU
     const thoiGianBayMin = parseInt(this.thamSo.ThoiGianBayToiThieu) || 0;
     if (thoi_gian_bay < thoiGianBayMin) {
-      return UI.toast(`❌ Thời gian bay tối thiểu là ${thoiGianBayMin} phút`, "warn");
+      return UI.toast(`Thời gian bay tối thiểu là ${thoiGianBayMin} phút`, "warn");
     }
 
     // ✅ 3. LẤY THAM SỐ DỪNG (min/max) MỘT LẦN DUY NHẤT
     const thoiGianDungMin = parseInt(this.thamSo.ThoiGianDungToiThieu) || 0;
     const thoiGianDungMax = parseInt(this.thamSo.ThoiGianDungToiDa) || 999;
     
-    console.log('🔍 Stopover validation:', {
+    console.log('Stopover validation:', {
       thamSo: this.thamSo,
       thoiGianDungMin,
       thoiGianDungMax
@@ -338,11 +338,11 @@ const ReceiveSchedule = {
         const thoiGianDung = stopH * 60 + stopM;
         // Kiểm tra bắt buộc: nếu chọn sân bay thì phải có thời gian dừng > 0
         if (thoiGianDung <= 0) {
-          return UI.toast(`❌ Sân bay trung gian ${i}: bắt buộc nhập thời gian dừng`, "warn");
+          return UI.toast(`Sân bay trung gian ${i}: bắt buộc nhập thời gian dừng`, "warn");
         }
         // Kiểm tra min/max
         if (thoiGianDung < thoiGianDungMin || thoiGianDung > thoiGianDungMax) {
-          return UI.toast(`❌ Sân bay ${i}: Thời gian dừng phải từ ${thoiGianDungMin} đến ${thoiGianDungMax} phút`, "warn");
+          return UI.toast(`Sân bay ${i}: Thời gian dừng phải từ ${thoiGianDungMin} đến ${thoiGianDungMax} phút`, "warn");
         }
         san_bay_trung_gian.push({
           ma_san_bay: stopVal,
@@ -355,7 +355,7 @@ const ReceiveSchedule = {
     // Validate số sân bay trung gian
     const soSanBayMax = parseInt(this.thamSo.SoSanBayTrungGianToiDa) || 2;
     if (san_bay_trung_gian.length > soSanBayMax) {
-      return UI.toast(`❌ Số sân bay trung gian tối đa là ${soSanBayMax}`, "warn");
+      return UI.toast(`Số sân bay trung gian tối đa là ${soSanBayMax}`, "warn");
     }
 
     const token = localStorage.getItem('uiticket_token');
@@ -397,11 +397,11 @@ const ReceiveSchedule = {
       UI.hideLoading?.();
 
       if (!response.ok) {
-        return UI.toast(`❌ ${data.error}`, "warn");
+        return UI.toast(`${data.error}`, "warn");
       }
 
-      UI.toast("✅ Đã lưu lịch chuyến bay thành công!", "success");
-      console.log('✅ Response:', data);
+      UI.toast("Đã lưu lịch chuyến bay thành công!", "success");
+      console.log('Response:', data);
       
       // Reset seat quantities nhưng không xóa form - để user xóa tay
       this.seatQuantities = {};
@@ -409,7 +409,7 @@ const ReceiveSchedule = {
     } catch (error) {
       UI.hideLoading?.();
       console.error('Save flight error:', error);
-      UI.toast("❌ Lỗi kết nối server", "warn");
+      UI.toast("Lỗi kết nối server", "warn");
     }
   }
 };

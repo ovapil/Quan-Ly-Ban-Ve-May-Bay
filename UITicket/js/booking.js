@@ -358,7 +358,7 @@ function renderFlights() {
       btn.onclick = () => {
         selected = f;
         applySelected();
-        UI.toast(`✅ Đã chọn ${f.flight_code}`, "success");
+        UI.toast(`Đã chọn ${f.flight_code}`, "success");
       };
       seatCell.appendChild(btn);
     }
@@ -435,7 +435,7 @@ async function loadFlightsFromApi(showToast = true, validateAirports = true) {
 
   if (showToast) {
     if (flights.length > 0) {
-      UI.toast(`🔎 Tìm thấy ${flights.length} chuyến`, "success");
+      UI.toast(`Tìm thấy ${flights.length} chuyến`, "success");
     } else {
       UI.toast("Không tìm được chuyến", "warn");
     }
@@ -587,7 +587,7 @@ async function createBooking() {
       body: JSON.stringify(payload)
     });
 
-    UI.toast(`✅ Đã tạo ${data.booking?.booking_code || "phiếu đặt"}`, "success");
+    UI.toast(`Đã tạo ${data.booking?.booking_code || "phiếu đặt"}`, "success");
 
     // refresh list + seats
     await loadBookingsFromApi();
@@ -631,10 +631,10 @@ function bindUI() {
 
   document.getElementById("btnFind")?.addEventListener("click", async () => {
     try {
-      UI.toast("🔎 Đang tìm chuyến...", "warn");
+      UI.toast("Đang tìm chuyến...", "warn");
       await loadFlightsFromApi(true, false);
     } catch (e) {
-      UI.toast(`❌ ${e.message}`, "warn");
+      UI.toast(`${e.message}`, "warn");
     }
   });
 
@@ -642,7 +642,7 @@ function bindUI() {
     try {
       await createBooking();
     } catch (e) {
-      UI.toast(`❌ ${e.message}`, "warn");
+      UI.toast(`${e.message}`, "warn");
     }
   });
 
@@ -655,7 +655,7 @@ function bindUI() {
     attemptedCreateBooking = false;
     applySelected();
     validateCreateBookingForm(false);
-    UI.toast("♻️ Đã làm mới", "success");
+    UI.toast("Đã làm mới", "success");
   });
 
   // initial state
@@ -675,7 +675,7 @@ document.getElementById("btnCancelBooking")?.addEventListener("click", async () 
 
   try {
     await api(`/bookings/${selectedBookingId}/cancel`, { method: "POST" });
-    UI.toast("✅ Đã hủy phiếu", "success");
+    UI.toast("Đã hủy phiếu", "success");
     selectedBookingId = null;
     await loadBookingsFromApi();     // refresh list
     const from = document.getElementById("fromAirport")?.value || "";
@@ -684,7 +684,7 @@ document.getElementById("btnCancelBooking")?.addEventListener("click", async () 
       await loadFlightsFromApi(false, false);      // refresh ghế trống chỉ khi đã chọn sân bay
     }
   } catch (e) {
-    UI.toast(`❌ ${e.message}`, "warn");
+    UI.toast(`${e.message}`, "warn");
   }
 });
 
@@ -713,12 +713,12 @@ document.getElementById("btnSellBooking")?.addEventListener("click", async () =>
   try {
     const data = await api(`/bookings/${selectedBookingId}/sell`, { method: "POST" });
     const code = data.ticket?.ma_ve ? ` ${data.ticket.ma_ve}` : "";
-    UI.toast(`✅ Đã bán vé${code}`, "success");
+    UI.toast(`Đã bán vé${code}`, "success");
     selectedBookingId = null;
     await loadBookingsFromApi();
     await loadFlightsFromApi(false, false);
   } catch (e) {
-    UI.toast(`❌ ${e.message}`, "warn");
+    UI.toast(`${e.message}`, "warn");
   } finally {
     sellFromBookingInFlight = false;
     if (btn) btn.disabled = false;
@@ -735,7 +735,7 @@ document.getElementById("btnSellBooking")?.addEventListener("click", async () =>
       const tmp = fromEl.value;
       fromEl.value = toEl.value;
       toEl.value = tmp;
-      UI.toast("🔁 Đã đổi chiều", "success");
+      UI.toast("Đã đổi chiều", "success");
     });
   }
 
@@ -753,9 +753,9 @@ document.getElementById("btnSellBooking")?.addEventListener("click", async () =>
     lastBookingQuery = q;
     try {
       await loadBookingsFromApi();
-      UI.toast("🔎 Đã tìm kiếm", "success");
+      UI.toast("Đã tìm kiếm", "success");
     } catch (e) {
-      UI.toast(`❌ ${e.message}`, "warn");
+      UI.toast(`${e.message}`, "warn");
     }
   });
 }
@@ -811,7 +811,7 @@ document.getElementById("bookingSearchInput")?.addEventListener("keydown", (e) =
   if (btnClear) {
     btnClear.addEventListener("click", async () => {
       lastBookingQuery = "";
-      UI.toast("🧹 Đã xoá lọc", "success");
+      UI.toast("Đã xoá lọc", "success");
       try { await loadBookingsFromApi(); } catch {}
     });
   }
@@ -821,7 +821,7 @@ document.getElementById("bookingSearchInput")?.addEventListener("keydown", (e) =
     btnRefresh.addEventListener("click", async () => {
       try {
         await loadBookingsFromApi();
-        UI.toast("🔄 Đã làm mới", "success");
+        UI.toast("Đã làm mới", "success");
       } catch {}
     });
   }
@@ -860,6 +860,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     await loadBookingsFromApi();
   } catch (e) {
-    UI.toast(`❌ ${e.message}`, "warn");
+    UI.toast(`${e.message}`, "warn");
   }
 });

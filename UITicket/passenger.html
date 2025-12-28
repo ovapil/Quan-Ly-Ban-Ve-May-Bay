@@ -305,12 +305,7 @@
 
                 <!-- Action Buttons -->
                 <div class="detail-actions">
-                  <button class="btn-edit" id="btnEdit">
-                    <i class="fa-solid fa-pen"></i> Sửa
-                  </button>
-                  <button class="btn-delete" id="btnDelete">
-                    <i class="fa-solid fa-trash"></i> Xóa
-                  </button>
+                  <!-- Đã bỏ nút Sửa ở chi tiết hành khách -->
                 </div>
               </div>
             </div>
@@ -345,7 +340,7 @@
           <div class="form-row two-cols">
             <div class="form-group">
               <label>CMND/CCCD <span class="req">*</span></label>
-              <input type="text" class="input" id="inputCmnd" placeholder="9 hoặc 12 chữ số" maxlength="12" />
+              <input type="text" class="input" id="inputCmnd" placeholder="9 hoặc 12 chữ số" maxlength="12" readonly />
               <span class="error" id="errCmnd"></span>
             </div>
             <div class="form-group">
@@ -366,32 +361,7 @@
     </div>
   </div>
 
-  <!-- Modal: Xác nhận xóa -->
-  <div class="modal-overlay hidden" id="deleteModal">
-    <div class="modal-card modal-sm">
-      <div class="modal-head">
-        <h3>Xác nhận xóa</h3>
-        <button class="modal-close" onclick="Passenger.closeDeleteModal()">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div class="delete-confirm">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-          <p>Bạn có chắc muốn xóa hành khách <strong id="deletePassengerName"></strong>?</p>
-          <span class="delete-warning">Hành động này không thể hoàn tác.</span>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="Passenger.closeDeleteModal()">Hủy</button>
-        <button class="btn-delete-confirm" id="btnConfirmDelete">
-          <i class="fa-solid fa-trash"></i> Xóa
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- Đã loại bỏ modal xác nhận xóa hành khách -->
 
   <!-- Modal: Transactions full list -->
   <div class="modal-overlay hidden" id="transactionsModal">
