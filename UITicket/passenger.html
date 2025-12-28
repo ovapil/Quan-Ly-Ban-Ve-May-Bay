@@ -37,13 +37,7 @@
       </nav>
 
       <div class="actions">
-        <button class="icon-btn" aria-label="Notifications">
-          <i class="fa-regular fa-bell"></i>
-          <span class="badge" id="notifBadge">1</span>
-        </button>
-        <button class="icon-btn" aria-label="Menu">
-          <i class="fa-solid fa-bars"></i>
-        </button>
+        <!-- Đã xóa nút thông báo và menu -->
       </div>
     </div>
   </header>
@@ -58,11 +52,14 @@
 
       <div class="container">
         <div class="hero-content">
-          <h1 class="hero-title">
-            <i class="fa-solid fa-users"></i>
-            Quản lý hành khách
-          </h1>
-          <p class="hero-subtitle">Quản lý thông tin hành khách trong các giao dịch vé & đặt chỗ</p>
+          <div class="search-back-btn-row">
+            <button class="tool-btn back" id="btnBackTop" title="Quay lại" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-arrow-left"></i></button>
+          </div>
+          <div class="hero-content">
+            <h1 class="hero-title">
+              QUẢN LÝ HÀNH KHÁCH
+            </h1>
+          </div>
         </div>
       </div>
     </section>

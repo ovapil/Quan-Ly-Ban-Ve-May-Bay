@@ -1,3 +1,20 @@
+/* Back button row (copy from lookup) */
+.search-back-btn-row {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: -18px;
+  margin-top: 0;
+  position: relative;
+  z-index: 20;
+}
+.search-back-btn-row .tool-btn.back {
+  position: static;
+  margin-left: 230px;
+  margin-bottom: 0;
+  margin-top: 0;
+}
 /* ===== PASSENGER PAGE TOKENS ===== */
 :root {
   --passenger-blue: #4a79ff;
@@ -188,15 +205,19 @@
 }
 
 .hero-title {
-  font-size: clamp(32px, 5vw, 48px);
+  font-family: "Asap", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  text-align: center;
   font-weight: 900;
-  color: var(--passenger-blue);
-  margin-bottom: 10px;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  color: #5a8eed;
+  font-size: clamp(34px, 3.4vw, 46px);
+  margin: 6px 0 18px;
+  text-shadow: 0 2px 8px rgba(46,74,168,0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
+  text-transform: uppercase;
 }
 
 .hero-title i {

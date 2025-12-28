@@ -11,28 +11,29 @@
 }
 .search-back-btn-row .tool-btn.back {
   position: static;
-  margin-left: 180px;
+  margin-left: 230px;
   margin-bottom: 0;
   margin-top: 0;
 }
 /* Nút tra cứu gradient xanh dương giống nút chỉnh sửa ở tài khoản */
 .btn-search {
-  background: linear-gradient(90deg, #2563eb 0%, #1e40af 100%) !important;
+  background: var(--primary) !important;
   color: #fff !important;
   border: none;
   border-radius: 24px;
   font-size: 15px;
   font-weight: 700;
   padding: 12px 32px;
-  box-shadow: 0 4px 16px rgba(37,99,235,0.10);
-  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 8px 18px rgba(46, 74, 168, 0.13);
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .btn-search:hover {
-  background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%) !important;
-  transform: translateY(-2px) scale(1.04);
+  background: #1e3a8a !important;
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 12px 28px rgba(46, 74, 168, 0.18);
 }
 
 /* Nút tra cứu gradient xanh dương giống nút chỉnh sửa ở tài khoản */
@@ -419,14 +420,18 @@ body.modal-open {
 .hero-content {
   text-align: center;
   margin-bottom: 30px;
+  transform: translateY(-40px);
+  transition: transform 0.2s;
 }
 
 .hero-title {
-  font-size: clamp(32px, 5vw, 48px);
+  text-align: center;
   font-weight: 900;
-  color: var(--lookup-blue);
-  margin-bottom: 10px;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  color: #5a8eed;
+  font-size: clamp(34px, 3.4vw, 46px);
+  margin: 6px 0 18px;
+  text-shadow: 0 2px 8px rgba(46,74,168,0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -455,6 +460,8 @@ body.modal-open {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
+  transform: translateY(-40px);
+  transition: transform 0.2s;
 }
 
 .search-tabs {
@@ -652,6 +659,8 @@ body.modal-open {
 .results-section {
   max-width: 1100px;
   margin: 0 auto;
+  transform: translateY(-60px);
+  transition: transform 0.2s;
 }
 
 .results-header {
