@@ -1,19 +1,38 @@
 /* Back button row (copy from lookup) */
+
+/* Back button row (lookup style) */
 .search-back-btn-row {
   width: 100%;
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin-bottom: -18px;
-  margin-top: 0;
-  position: relative;
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  margin: 0;
   z-index: 20;
 }
-.search-back-btn-row .tool-btn.back {
-  position: static;
-  margin-left: 230px;
-  margin-bottom: 0;
-  margin-top: 0;
+.tool-btn.back {
+  position: absolute;
+  top: 0;
+  left: 82px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.12);
+  color: #111;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+.tool-btn.back:hover {
+  box-shadow: 0 12px 28px rgba(17,24,39,0.18);
+}
+.tool-btn.back i {
+  font-size: 18px;
 }
 /* ===== PASSENGER PAGE TOKENS ===== */
 :root {

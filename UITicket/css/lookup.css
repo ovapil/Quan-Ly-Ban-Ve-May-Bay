@@ -38,7 +38,6 @@
 
 /* Nút tra cứu gradient xanh dương giống nút chỉnh sửa ở tài khoản */
 /* Trả lại màu gốc cho nút tra cứu, bỏ gradient */
-.tool-btn.back {
   position: absolute;
   top: 32px;
   left: 32px;

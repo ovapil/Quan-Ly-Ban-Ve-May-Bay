@@ -50,14 +50,15 @@
       <div class="cloud cloud-2"></div>
       <div class="cloud cloud-3"></div>
 
+      <!-- Back button styled like lookup -->
+      <div class="search-back-btn-row" style="position:absolute;top:32px;left:32px;z-index:20;">
+        <button class="tool-btn back" id="btnBackTop" title="Quay lại" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-arrow-left"></i></button>
+      </div>
+
       <div class="container">
         <div class="hero-content">
-          <div class="search-back-btn-row">
-            <button class="tool-btn back" id="btnBackTop" title="Quay lại" onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-arrow-left"></i></button>
-          </div>
-          <div class="hero-content">
-            <h1 class="hero-title">
-              QUẢN LÝ HÀNH KHÁCH
+          <h1 class="hero-title">
+            QUẢN LÝ HÀNH KHÁCH
             </h1>
           </div>
         </div>
@@ -65,7 +66,7 @@
     </section>
 
     <div class="container">
-      <div class="passenger-layout">
+      <div class="passenger-layout" style="margin-top:-60px;">
         <!-- LEFT: Danh sách hành khách -->
         <section class="passenger-list-section">
           <div class="panel">
