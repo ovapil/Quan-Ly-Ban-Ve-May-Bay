@@ -1068,11 +1068,27 @@ function escapeHtml(s) {
   }[m]));
 }
 
+const LOCKED_PARAM_NAMES = new Set([
+  'thoigianbaytoithieu',
+  'sosanbaytrunggiantoida',
+  'thoigiandungtoithieu',
+  'thoigiandungtoida',
+  'soluonghangve',
+  'tilegiahangve1',
+  'tilegiahangve2',
+  'thoigiandatvechamnhat'
+]);
+
+function isLockedParameterName(name = '') {
+  return LOCKED_PARAM_NAMES.has(String(name).trim().toLowerCase());
+}
+
 // ============================================
 // INFO MODAL FUNCTIONS (SYSTEM INFO)
 // ============================================
 Object.assign(Dashboard, {
   currentInfoTab: 'airport',
+  infoEditContext: null,
 
   showInfoModal() {
     const modal = document.getElementById("infoModal");
@@ -1097,6 +1113,182 @@ Object.assign(Dashboard, {
     
     document.querySelector(`.info-tab[data-tab="${tab}"]`)?.classList.add('active');
     document.getElementById(tab + 'Tab')?.classList.add('active');
+  },
+
+  openInfoEditModal(type, payload = {}) {
+    const modal = document.getElementById("infoEditModal");
+    const titleEl = document.getElementById("infoEditTitle");
+    const form = document.getElementById("infoEditForm");
+    if (!modal || !titleEl || !form) return;
+
+    // Reset form content
+    form.innerHTML = '';
+
+    if (type === 'airport') {
+      const { code = '', name = '', city = '', country = '' } = payload;
+      this.infoEditContext = { type, originalCode: code };
+      titleEl.textContent = 'Sửa thông tin sân bay';
+      form.innerHTML = `
+        <input type="text" id="editAirportCode" placeholder="Mã sân bay" value="${escapeHtml(code)}" />
+        <input type="text" id="editAirportName" placeholder="Tên sân bay" value="${escapeHtml(name)}" />
+        <input type="text" id="editAirportCity" placeholder="Thành phố" value="${escapeHtml(city)}" />
+        <input type="text" id="editAirportCountry" placeholder="Quốc gia" value="${escapeHtml(country)}" />
+      `;
+    } else if (type === 'class') {
+      const { code = '', name = '', ratio = '' } = payload;
+      this.infoEditContext = { type, originalCode: code };
+      titleEl.textContent = 'Sửa hạng vé';
+      form.innerHTML = `
+        <input type="text" id="editClassCode" placeholder="Mã hạng vé" value="${escapeHtml(code)}" />
+        <input type="text" id="editClassName" placeholder="Tên hạng vé" value="${escapeHtml(name)}" />
+        <input type="number" step="0.01" id="editClassRatio" placeholder="Tỷ lệ giá" value="${escapeHtml(ratio)}" />
+      `;
+    } else if (type === 'parameter') {
+      const { name = '', value = '', desc = '' } = payload;
+      const locked = isLockedParameterName(name);
+      this.infoEditContext = { type, originalName: name, locked };
+      titleEl.textContent = 'Sửa tham số hệ thống';
+      form.innerHTML = `
+        <input type="text" id="editParamName" placeholder="Tên tham số" value="${escapeHtml(name)}" ${locked ? 'readonly style="background:#f1f5f9;color:#6b7280;cursor:not-allowed;"' : ''} />
+        <input type="text" id="editParamValue" placeholder="Giá trị" value="${escapeHtml(value)}" />
+        <input type="text" id="editParamDesc" placeholder="Mô tả" value="${escapeHtml(desc || '')}" />
+        ${locked ? '<div class="info-note" style="font-size:12px;color:var(--muted);">Tên tham số này được cố định để tránh sai lệch giữa các màn hình.</div>' : ''}
+      `;
+    } else {
+      return;
+    }
+
+    modal.classList.remove('hidden');
+  },
+
+  closeInfoEditModal() {
+    const modal = document.getElementById("infoEditModal");
+    const form = document.getElementById("infoEditForm");
+    if (modal) modal.classList.add('hidden');
+    if (form) form.innerHTML = '';
+    this.infoEditContext = null;
+  },
+
+  async submitInfoEdit() {
+    const ctx = this.infoEditContext;
+    if (!ctx) {
+      this.closeInfoEditModal();
+      return;
+    }
+
+    const token = localStorage.getItem("uiticket_token");
+
+    try {
+      if (ctx.type === 'airport') {
+        const code = document.getElementById("editAirportCode")?.value?.trim().toUpperCase();
+        const name = document.getElementById("editAirportName")?.value?.trim();
+        const city = document.getElementById("editAirportCity")?.value?.trim();
+        const country = document.getElementById("editAirportCountry")?.value?.trim();
+
+        if (!code || !name) {
+          UI.toast('Vui lòng nhập mã và tên sân bay', 'warn');
+          return;
+        }
+
+        UI.showLoading();
+        const res = await fetch(`${API_BASE_URL}/admin/airports/${encodeURIComponent(ctx.originalCode)}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code, name, city, country })
+        });
+        const data = await res.json();
+        UI.hideLoading();
+
+        if (!res.ok) {
+          UI.toast(data.error || 'Lỗi cập nhật sân bay', 'warn');
+          return;
+        }
+
+        UI.toast('Cập nhật sân bay thành công', 'success');
+        this.closeInfoEditModal();
+        await this.loadAirports();
+      } else if (ctx.type === 'class') {
+        const code = document.getElementById("editClassCode")?.value?.trim().toUpperCase();
+        const name = document.getElementById("editClassName")?.value?.trim();
+        const ratio = parseFloat(document.getElementById("editClassRatio")?.value);
+
+        if (!code || !name || Number.isNaN(ratio)) {
+          UI.toast('Vui lòng nhập đầy đủ thông tin hạng vé', 'warn');
+          return;
+        }
+
+        UI.showLoading();
+        const res = await fetch(`${API_BASE_URL}/admin/classes/${encodeURIComponent(ctx.originalCode)}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code, name, ratio })
+        });
+        const data = await res.json();
+        UI.hideLoading();
+
+        if (!res.ok) {
+          UI.toast(data.error || 'Lỗi cập nhật hạng vé', 'warn');
+          return;
+        }
+
+        UI.toast('Cập nhật hạng vé thành công', 'success');
+        this.closeInfoEditModal();
+        await this.loadClasses();
+      } else if (ctx.type === 'parameter') {
+        const rawName = document.getElementById("editParamName")?.value?.trim();
+        const value = document.getElementById("editParamValue")?.value?.trim();
+        const desc = document.getElementById("editParamDesc")?.value?.trim();
+        const name = ctx.locked ? ctx.originalName : rawName;
+
+        if (!name || !value) {
+          UI.toast('Vui lòng nhập tên và giá trị tham số', 'warn');
+          return;
+        }
+
+        UI.showLoading();
+        const res = await fetch(`${API_BASE_URL}/admin/parameters/${encodeURIComponent(ctx.originalName)}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, value, desc })
+        });
+        const data = await res.json();
+        UI.hideLoading();
+
+        if (!res.ok) {
+          UI.toast(data.error || 'Lỗi cập nhật tham số', 'warn');
+          return;
+        }
+
+        UI.toast('Cập nhật tham số thành công', 'success');
+        this.closeInfoEditModal();
+        await this.loadParameters();
+      }
+    } catch (error) {
+      UI.hideLoading();
+      console.error('Submit info edit error:', error);
+      UI.toast('Không thể cập nhật, vui lòng thử lại', 'warn');
+    }
+  },
+
+  editAirport(code, name, city, country) {
+    this.openInfoEditModal('airport', { code, name, city, country });
+  },
+
+  editClass(code, name, ratio) {
+    this.openInfoEditModal('class', { code, name, ratio });
+  },
+
+  editParameter(name, value, desc) {
+    this.openInfoEditModal('parameter', { name, value, desc });
   },
 
   // ✅ AIRPORT FUNCTIONS
@@ -1133,82 +1325,6 @@ Object.assign(Dashboard, {
           </button>
         </div>
       `).join('');
-    // TÁCH RA NGOÀI OBJECT ĐỂ KHÔNG LÀM HỎNG DASHBOARD
-    Dashboard.editAirport = async function(code, name, city, country) {
-      // Hiển thị prompt nhập thông tin mới cho tất cả trường
-      const newCode = await UI.prompt({
-        title: `Sửa mã sân bay: ${code}`,
-        message: 'Nhập mã sân bay mới:',
-        defaultValue: code,
-        placeholder: 'Mã sân bay',
-        confirmText: 'Tiếp tục',
-        cancelText: 'Hủy',
-        type: 'info',
-        icon: 'fa-pen'
-      });
-      if (newCode === null || newCode.trim() === '') return;
-
-      const newName = await UI.prompt({
-        title: `Sửa tên sân bay: ${newCode}`,
-        message: 'Nhập tên sân bay mới:',
-        defaultValue: name,
-        placeholder: 'Tên sân bay',
-        confirmText: 'Tiếp tục',
-        cancelText: 'Hủy',
-        type: 'info',
-        icon: 'fa-pen'
-      });
-      if (newName === null || newName.trim() === '') return;
-
-      const newCity = await UI.prompt({
-        title: `Sửa thành phố sân bay: ${newCode}`,
-        message: 'Nhập thành phố mới:',
-        defaultValue: city,
-        placeholder: 'Thành phố',
-        confirmText: 'Tiếp tục',
-        cancelText: 'Hủy',
-        type: 'info',
-        icon: 'fa-pen'
-      });
-      if (newCity === null) return;
-
-      const newCountry = await UI.prompt({
-        title: `Sửa quốc gia sân bay: ${newCode}`,
-        message: 'Nhập quốc gia mới:',
-        defaultValue: country,
-        placeholder: 'Quốc gia',
-        confirmText: 'Cập nhật',
-        cancelText: 'Hủy',
-        type: 'info',
-        icon: 'fa-pen'
-      });
-      if (newCountry === null) return;
-
-      const token = localStorage.getItem("uiticket_token");
-      try {
-        UI.showLoading();
-        const res = await fetch(`${API_BASE_URL}/admin/airports/${encodeURIComponent(code)}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ code: newCode, name: newName, city: newCity, country: newCountry })
-        });
-        const data = await res.json();
-        UI.hideLoading();
-        if (!res.ok) {
-          UI.toast(data.error || 'Lỗi cập nhật sân bay', 'warn');
-          return;
-        }
-        UI.toast('Cập nhật sân bay thành công', 'success');
-        Dashboard.loadAirports();
-      } catch (error) {
-        UI.hideLoading();
-        console.error('Edit airport error:', error);
-        UI.toast('Lỗi cập nhật sân bay', 'warn');
-      }
-    };
     } catch (error) {
       console.error('Load airports error:', error);
       UI.toast('Lỗi tải sân bay', 'warn');
@@ -1323,75 +1439,6 @@ Object.assign(Dashboard, {
           </button>
         </div>
       `).join('');
-    // TÁCH RA NGOÀI OBJECT ĐỂ KHÔNG LÀM HỎNG DASHBOARD
-    Dashboard.editClass = async function(code, name, ratio) {
-      // Hiển thị prompt nhập thông tin mới cho tất cả trường
-      const newCode = await UI.prompt({
-        title: `Sửa mã hạng vé: ${code}`,
-        message: 'Nhập mã hạng vé mới:',
-        defaultValue: code,
-        placeholder: 'Mã hạng vé',
-        confirmText: 'Tiếp tục',
-        cancelText: 'Hủy',
-        type: 'info',
-        icon: 'fa-pen'
-      });
-      if (newCode === null || newCode.trim() === '') return;
-
-      const newName = await UI.prompt({
-        title: `Sửa tên hạng vé: ${newCode}`,
-        message: 'Nhập tên hạng vé mới:',
-        defaultValue: name,
-        placeholder: 'Tên hạng vé',
-        confirmText: 'Tiếp tục',
-        cancelText: 'Hủy',
-        type: 'info',
-        icon: 'fa-pen'
-      });
-      if (newName === null || newName.trim() === '') return;
-
-      const newRatioStr = await UI.prompt({
-        title: `Sửa tỷ lệ giá: ${newCode}`,
-        message: 'Nhập tỷ lệ giá mới (số thực, ví dụ 1.2):',
-        defaultValue: ratio,
-        placeholder: 'Tỷ lệ giá',
-        confirmText: 'Cập nhật',
-        cancelText: 'Hủy',
-        type: 'info',
-        icon: 'fa-pen'
-      });
-      if (newRatioStr === null) return;
-      const newRatio = parseFloat(newRatioStr);
-      if (isNaN(newRatio)) {
-        UI.toast('Tỷ lệ giá không hợp lệ', 'warn');
-        return;
-      }
-
-      const token = localStorage.getItem("uiticket_token");
-      try {
-        UI.showLoading();
-        const res = await fetch(`${API_BASE_URL}/admin/classes/${encodeURIComponent(code)}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ code: newCode, name: newName, ratio: newRatio })
-        });
-        const data = await res.json();
-        UI.hideLoading();
-        if (!res.ok) {
-          UI.toast(data.error || 'Lỗi cập nhật hạng vé', 'warn');
-          return;
-        }
-        UI.toast('Cập nhật hạng vé thành công', 'success');
-        Dashboard.loadClasses();
-      } catch (error) {
-        UI.hideLoading();
-        console.error('Edit class error:', error);
-        UI.toast('Lỗi cập nhật hạng vé', 'warn');
-      }
-    };
     } catch (error) {
       console.error('Load classes error:', error);
       UI.toast('Lỗi tải hạng vé', 'warn');
@@ -1487,7 +1534,13 @@ Object.assign(Dashboard, {
         return;
       }
 
-      list.innerHTML = data.parameters.map(p => `
+      list.innerHTML = data.parameters.map(p => {
+        const locked = isLockedParameterName(p.ten_tham_so);
+        const deleteBtn = locked
+          ? '<button class="info-del-btn" disabled style="opacity:0.5;cursor:not-allowed;pointer-events:none;" title="Không thể xóa tham số cố định"><i class="fa-solid fa-trash"></i></button>'
+          : `<button class="info-del-btn" onclick="Dashboard.deleteParameter('${escapeHtml(p.ten_tham_so)}')"><i class="fa-solid fa-trash"></i></button>`;
+
+        return `
         <div class="info-item">
           <div class="info-item-main">
             <div class="info-item-code">${escapeHtml(p.ten_tham_so)}</div>
@@ -1499,79 +1552,14 @@ Object.assign(Dashboard, {
           <button class="info-edit-btn" onclick="Dashboard.editParameter(\'${escapeHtml(p.ten_tham_so)}\', \`${p.gia_tri ? String(p.gia_tri).replace(/`/g, '\u0060').replace(/\\/g, '\\') : ''}\`, \`${p.mo_ta ? String(p.mo_ta).replace(/`/g, '\u0060').replace(/\\/g, '\\') : ''}\`)">
             <i class='fa-solid fa-pen'></i>
           </button>
-          <button class="info-del-btn" onclick="Dashboard.deleteParameter('${escapeHtml(p.ten_tham_so)}')">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+          ${deleteBtn}
         </div>
-      `).join('');
+        `;
+      }).join('');
     } catch (error) {
       console.error('Load parameters error:', error);
       UI.toast('Lỗi tải tham số', 'warn');
     }
-  // TÁCH RA NGOÀI OBJECT ĐỂ KHÔNG LÀM HỎNG DASHBOARD
-  Dashboard.editParameter = async function(name, value, desc) {
-    // Hiển thị prompt nhập thông tin mới cho tất cả trường
-    const newName = await UI.prompt({
-      title: `Sửa tên tham số: ${name}`,
-      message: 'Nhập tên tham số mới:',
-      defaultValue: name,
-      placeholder: 'Tên tham số',
-      confirmText: 'Tiếp tục',
-      cancelText: 'Hủy',
-      type: 'info',
-      icon: 'fa-pen'
-    });
-    if (newName === null || newName.trim() === '') return;
-
-    const newValue = await UI.prompt({
-      title: `Sửa giá trị tham số: ${newName}`,
-      message: 'Nhập giá trị mới:',
-      defaultValue: value,
-      placeholder: 'Giá trị mới',
-      confirmText: 'Tiếp tục',
-      cancelText: 'Hủy',
-      type: 'info',
-      icon: 'fa-pen'
-    });
-    if (newValue === null) return;
-
-    const newDesc = await UI.prompt({
-      title: `Sửa mô tả tham số: ${newName}`,
-      message: 'Nhập mô tả mới:',
-      defaultValue: desc,
-      placeholder: 'Mô tả',
-      confirmText: 'Cập nhật',
-      cancelText: 'Hủy',
-      type: 'info',
-      icon: 'fa-pen'
-    });
-    if (newDesc === null) return;
-
-    const token = localStorage.getItem("uiticket_token");
-    try {
-      UI.showLoading();
-      const res = await fetch(`${API_BASE_URL}/admin/parameters/${encodeURIComponent(name)}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: newName, value: newValue, desc: newDesc })
-      });
-      const data = await res.json();
-      UI.hideLoading();
-      if (!res.ok) {
-        UI.toast(data.error || 'Lỗi cập nhật tham số', 'warn');
-        return;
-      }
-      UI.toast('Cập nhật tham số thành công', 'success');
-      Dashboard.loadParameters();
-    } catch (error) {
-      UI.hideLoading();
-      console.error('Edit parameter error:', error);
-      UI.toast('Lỗi cập nhật tham số', 'warn');
-    }
-  };
   },
 
   async addParameter() {

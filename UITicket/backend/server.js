@@ -1973,32 +1973,45 @@ app.post('/api/admin/parameters', verifyToken, requireAdmin, async (req, res) =>
 
 // PATCH: Update parameter value by name
 app.patch('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
-  const name = String(req.params.name).trim();
-  let { value, desc } = req.body || {};
+  const oldName = String(req.params.name).trim();
+  let { name, value, desc } = req.body || {};
 
   try {
+    const newName = name !== undefined ? String(name).trim() : oldName;
     value = String(value || '').trim();
     desc = desc !== undefined ? String(desc).trim() : undefined;
 
-    if (!value) {
-      return res.status(400).json({ error: 'Giá trị là bắt buộc' });
+    if (!newName || !value) {
+      return res.status(400).json({ error: 'Tên tham số và giá trị là bắt buộc' });
     }
 
     // Check if parameter exists
     const existing = await pool.query(
       'SELECT ten_tham_so FROM tham_so WHERE ten_tham_so = $1',
-      [name]
+      [oldName]
     );
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'Tham số không tồn tại' });
     }
 
-    // Update parameter
+    // If renaming, ensure the new name is not taken
+    if (newName !== oldName) {
+      const dup = await pool.query(
+        'SELECT ten_tham_so FROM tham_so WHERE ten_tham_so = $1',
+        [newName]
+      );
+      if (dup.rows.length > 0) {
+        return res.status(400).json({ error: 'Tên tham số mới đã tồn tại' });
+      }
+    }
+
+    const descParam = desc === undefined ? null : desc;
     const result = await pool.query(
-      `UPDATE tham_so SET gia_tri = $1, mo_ta = COALESCE($2, mo_ta)
-       WHERE ten_tham_so = $3
+      `UPDATE tham_so 
+       SET ten_tham_so = $1, gia_tri = $2, mo_ta = COALESCE($3, mo_ta)
+       WHERE ten_tham_so = $4
        RETURNING ten_tham_so, gia_tri, mo_ta`,
-      [value, desc, name]
+      [newName, value, descParam, oldName]
     );
 
     res.json({
@@ -2900,6 +2913,12 @@ app.get('/api/passengers', verifyToken, async (req, res) => {
           gd.created_at,
           'gd' AS source
         FROM giao_dich_ve gd
+        WHERE NOT (
+          LOWER(gd.trang_thai) LIKE '%bán%'
+          OR LOWER(gd.trang_thai) LIKE '%thanh toán%'
+          OR LOWER(gd.trang_thai) LIKE '%paid%'
+          OR LOWER(gd.trang_thai) LIKE '%tt%'
+        )
 
         UNION ALL
 
@@ -3022,7 +3041,14 @@ app.get('/api/passengers/:key/transactions', verifyToken, async (req, res) => {
                END AS status,
                created_at, 'giao_dich_ve' AS source
         FROM giao_dich_ve
-        WHERE cmnd = $1 OR dien_thoai = $1
+        WHERE (cmnd = $1 OR dien_thoai = $1)
+          -- Loại bỏ các giao dịch đã bán/đã thanh toán để tránh trùng với bảng ve
+          AND NOT (
+            LOWER(trang_thai) LIKE '%bán%'
+            OR LOWER(trang_thai) LIKE '%thanh toán%'
+            OR LOWER(trang_thai) LIKE '%paid%'
+            OR LOWER(trang_thai) LIKE '%tt%'
+          )
       ),
       v AS (
         SELECT v.id::text AS id, v.ma_chuyen_bay, v.gia_ve::numeric AS amount, 'paid' AS status, v.created_at, 've' AS source

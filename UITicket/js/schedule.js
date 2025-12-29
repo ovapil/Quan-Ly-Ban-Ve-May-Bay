@@ -406,6 +406,9 @@ const ReceiveSchedule = {
       // Reset seat quantities nhưng không xóa form - để user xóa tay
       this.seatQuantities = {};
 
+      // Refresh trang sau khi lưu thành công để tránh hiển thị dữ liệu cũ
+      setTimeout(() => window.location.reload(), 600);
+
     } catch (error) {
       UI.hideLoading?.();
       console.error('Save flight error:', error);

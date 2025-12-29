@@ -445,6 +445,8 @@ const Passenger = {
           so_tien: t.amount || 0
         }));
         p.transactions = tx;
+        p.tickets = tx.length;
+        p.total_spent = tx.reduce((sum, t) => sum + (t.trang_thai === 'paid' ? Number(t.so_tien || 0) : 0), 0);
         p.showAllTransactions = false; // default show only first 5
       } else {
         p.transactions = [];

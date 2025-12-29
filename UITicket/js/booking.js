@@ -423,7 +423,11 @@ async function loadFlightsFromApi(showToast = true, validateAirports = true) {
   const prevCode = selected?.flight_code || "";
 
   const data = await api(`/flights?${qs.toString()}`);
-  flights = data.items || [];
+  const now = Date.now();
+  flights = (data.items || []).filter(f => {
+    const d = new Date(f.depart_at);
+    return !isNaN(d.getTime()) ? d.getTime() >= now : true; // chỉ giữ chuyến chưa bay
+  });
   console.log('Flights data:', flights); // Debug: Check seats_by_class
 
   // Không tự chọn chuyến sau khi tìm; chỉ giữ lại nếu người dùng đã chọn trước đó
@@ -485,9 +489,15 @@ function renderBookings(items) {
   body.querySelectorAll(".bk-row").forEach((tr) => {
     tr.addEventListener("click", () => {
       const id = Number(tr.dataset.id);
-      selectedBookingId = id;
-      body.querySelectorAll(".bk-row").forEach((x) => x.classList.remove("selected"));
-      tr.classList.add("selected");
+      const isSame = Number(selectedBookingId) === id;
+      if (isSame) {
+        selectedBookingId = null;
+        tr.classList.remove("selected");
+      } else {
+        selectedBookingId = id;
+        body.querySelectorAll(".bk-row").forEach((x) => x.classList.remove("selected"));
+        tr.classList.add("selected");
+      }
       updateCancelBtn();
       updateSellBtn();
     });

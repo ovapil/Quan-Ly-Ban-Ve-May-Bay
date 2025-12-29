@@ -298,6 +298,24 @@
     </div>
   </div>
 
+  <!-- Modal chỉnh sửa thông tin (sân bay / hạng vé / tham số) -->
+  <div id="infoEditModal" class="modal hidden">
+    <div class="modal-card info-card">
+      <div class="modal-head">
+        <h3 id="infoEditTitle">Chỉnh sửa</h3>
+        <button class="modal-close" onclick="Dashboard.closeInfoEditModal()">×</button>
+      </div>
+
+      <div class="modal-body info-body">
+        <div class="info-form" id="infoEditForm"></div>
+        <div class="info-edit-actions">
+          <button class="info-btn primary" onclick="Dashboard.submitInfoEdit()">Lưu thay đổi</button>
+          <button class="info-btn ghost" onclick="Dashboard.closeInfoEditModal()">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="js/dashboard.js"></script>
 </body>
 </html>

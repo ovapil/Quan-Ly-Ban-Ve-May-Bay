@@ -621,7 +621,13 @@ minutesToText(min) {
     return;
   }
 
-  this.flights = (data.flights || []).map(r => this.mapFlight(r));
+  const now = new Date();
+  this.flights = (data.flights || [])
+    .map(r => this.mapFlight(r))
+    .filter(f => {
+      const d = parseApiDate(f.departISO);
+      return d ? d.getTime() >= now.getTime() : true; // ẩn chuyến đã bay
+    });
   this.filtered = [...this.flights];
 
   // nếu chuyến đang chọn không còn => bỏ chọn

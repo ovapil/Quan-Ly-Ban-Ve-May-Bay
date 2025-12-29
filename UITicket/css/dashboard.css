@@ -1042,3 +1042,61 @@ body.app-mode{
     0 0 0 4px rgba(46,74,168,0.18),
     0 14px 28px rgba(46,74,168,0.22);
 }
+
+/* Nút lưu / hủy ở modal chỉnh sửa thông tin */
+#infoEditModal .info-edit-actions{
+  display:flex;
+  gap:12px;
+  justify-content:flex-end;
+  margin-top:14px;
+}
+
+#infoEditModal .info-edit-actions .info-btn{
+  min-width:140px;
+  height:48px;
+  border-radius:12px;
+  border:0;
+  font-weight:800;
+  font-size:15px;
+  letter-spacing:0.15px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  cursor:pointer;
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease, background .15s ease, color .15s ease;
+}
+
+#infoEditModal .info-edit-actions .info-btn.primary{
+  background: var(--primary);
+  color:#fff;
+  box-shadow: 0 12px 28px rgba(46,74,168,0.24);
+}
+
+#infoEditModal .info-edit-actions .info-btn.primary:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(46,74,168,0.28);
+}
+
+#infoEditModal .info-edit-actions .info-btn.primary:active{
+  transform: translateY(0);
+  filter: brightness(0.92);
+}
+
+#infoEditModal .info-edit-actions .info-btn.ghost{
+  background:#f8fafc;
+  color:#0f172a;
+  border:1px solid #e2e8f0;
+  box-shadow:none;
+}
+
+#infoEditModal .info-edit-actions .info-btn.ghost:hover{
+  transform: translateY(-1px);
+  background:#e2e8f0;
+  border-color:#cbd5e1;
+}
+
+#infoEditModal .info-edit-actions .info-btn.ghost:active{
+  transform: translateY(0);
+  background:#cbd5e1;
+}
