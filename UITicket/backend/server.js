@@ -2953,12 +2953,16 @@ app.get('/api/passengers', verifyToken, async (req, res) => {
           MAX(cmnd) AS cmnd,
           MAX(sdt) AS sdt,
           COUNT(*) AS tickets,
+          SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid_count,
+          SUM(CASE WHEN status = 'booked' THEN 1 ELSE 0 END) AS booked_count,
+          SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_count,
+          SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END) AS expired_count,
           COALESCE(SUM(CASE WHEN (source='ve' OR status='paid') THEN amount ELSE 0 END),0) AS total_spent
         FROM numbered
         WHERE key_id_norm IS NOT NULL
         GROUP BY key_id_norm
       )
-      SELECT g.key_id, g.ho_ten, g.cmnd, g.sdt, g.tickets, g.total_spent, l.last_status, l.last_time
+      SELECT g.key_id, g.ho_ten, g.cmnd, g.sdt, g.tickets, g.paid_count, g.booked_count, g.cancelled_count, g.expired_count, g.total_spent, l.last_status, l.last_time
       FROM grouped g
       LEFT JOIN last_per_key l ON l.key_id = g.key_id
     `;
@@ -3007,6 +3011,10 @@ app.get('/api/passengers', verifyToken, async (req, res) => {
       cmnd: r.cmnd,
       sdt: r.sdt,
       tickets: parseInt(r.tickets) || 0,
+      paid_count: parseInt(r.paid_count) || 0,
+      booked_count: parseInt(r.booked_count) || 0,
+      cancelled_count: parseInt(r.cancelled_count) || 0,
+      expired_count: parseInt(r.expired_count) || 0,
       total_spent: Number(r.total_spent) || 0,
       last_status: r.last_status || null,
       last_time: r.last_time || null

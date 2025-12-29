@@ -222,6 +222,10 @@ const Passenger = {
           cmnd: p.cmnd,
           sdt: p.sdt,
           tickets: p.tickets || 0,
+          paid_count: p.paid_count || 0,
+          booked_count: p.booked_count || 0,
+          cancelled_count: p.cancelled_count || 0,
+          expired_count: p.expired_count || 0,
           total_spent: p.total_spent || 0,
           status: p.last_status || null,
           created_at: p.last_time || null,
@@ -306,11 +310,14 @@ const Passenger = {
     const passengers = PassengerState.passengers;
     
     document.getElementById('statTotal').textContent = passengers.length;
-    document.getElementById('statPaid').textContent = passengers.filter(p => p.status === 'paid').length;
-    document.getElementById('statBooked').textContent = passengers.filter(p => p.status === 'booked').length;
-    
-    const cancelledExpired = passengers.filter(p => p.status === 'cancelled' || p.status === 'expired').length;
-    document.getElementById('statCancelled').textContent = cancelledExpired;
+    // Đếm theo số vé (paid/booked/cancel/expired) thay vì chỉ trạng thái cuối của hành khách
+    const totalPaid = passengers.reduce((sum, p) => sum + (p.paid_count || 0), 0);
+    const totalBooked = passengers.reduce((sum, p) => sum + (p.booked_count || 0), 0);
+    const totalCancelled = passengers.reduce((sum, p) => sum + (p.cancelled_count || 0) + (p.expired_count || 0), 0);
+
+    document.getElementById('statPaid').textContent = totalPaid;
+    document.getElementById('statBooked').textContent = totalBooked;
+    document.getElementById('statCancelled').textContent = totalCancelled;
   },
 
   // Render table
@@ -445,7 +452,12 @@ const Passenger = {
           so_tien: t.amount || 0
         }));
         p.transactions = tx;
+        // Cập nhật lại các chỉ số đếm theo giao dịch thực tế
         p.tickets = tx.length;
+        p.paid_count = tx.reduce((sum, t) => sum + (t.trang_thai === 'paid' ? 1 : 0), 0);
+        p.booked_count = tx.reduce((sum, t) => sum + (t.trang_thai === 'booked' ? 1 : 0), 0);
+        p.cancelled_count = tx.reduce((sum, t) => sum + (t.trang_thai === 'cancelled' ? 1 : 0), 0);
+        p.expired_count = tx.reduce((sum, t) => sum + (t.trang_thai === 'expired' ? 1 : 0), 0);
         p.total_spent = tx.reduce((sum, t) => sum + (t.trang_thai === 'paid' ? Number(t.so_tien || 0) : 0), 0);
         p.showAllTransactions = false; // default show only first 5
       } else {
