@@ -1705,3 +1705,95 @@
   #transactionsModal .modal-card { width: 96%; }
   #transactionsModal .transaction-table th, #transactionsModal .transaction-table td { padding: 8px 6px; font-size: 12px; }
 }
+
+/* ===== Passenger modal: Horizontal (inline) form items ===== */
+#passengerModal .modal-card {
+  max-width: 640px;
+  width: calc(100% - 48px);
+  box-sizing: border-box;
+  overflow: hidden; /* avoid modal-level horizontal scroll */
+}
+
+#passengerModal .modal-body {
+  padding: 20px;
+  overflow-x: hidden; /* prevent horizontal scrollbar from long form rows */
+}
+
+/* Form row: left label (fixed), right input (flexible) */
+#passengerModal .modal-body .form-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+#passengerModal .modal-body .form-row .form-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px; /* tighter gap so colon stays close */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Label column: fixed width (desktop), percentage fallback for small screens */
+#passengerModal .modal-body .form-row .form-group label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end; /* right-align label contents */
+  gap: 4px;
+  width: 130px; /* fixed label width for alignment */
+  min-width: 80px;
+  margin: 0;
+  font-weight: 700;
+  text-align: right; /* ensure text inside label is right aligned */
+  white-space: nowrap;
+  box-sizing: border-box;
+  padding-right: 6px; /* small padding so label sits close to input */
+}
+
+/* Optional colon after label text */
+#passengerModal .modal-body .form-row .form-group label::after {
+  content: ':';
+  margin-left: 0; /* attach colon directly after label content */
+  color: var(--muted);
+}
+
+/* Required star: plain inline text, no box */
+#passengerModal .modal-body .form-row .form-group .req {
+  display: inline;
+  color: #e11d48;
+  margin-left: 2px; /* small gap between label text and star */
+  font-weight: 700;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  line-height: 1;
+}
+
+/* Input column: flexible, prevent overflow */
+#passengerModal .modal-body .form-row .form-group input.input {
+  flex: 1 1 auto;
+  min-width: 0; /* allow shrinking */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Two-column row: two groups side-by-side */
+#passengerModal .modal-body .form-row.two-cols {
+  display: flex;
+  gap: 12px;
+}
+#passengerModal .modal-body .form-row.two-cols .form-group {
+  flex: 1 1 0;
+}
+
+/* Responsive: stack label above input on small screens */
+@media (max-width: 600px) {
+  #passengerModal .modal-body .form-row { flex-direction: column; align-items: stretch; }
+  #passengerModal .modal-body .form-row .form-group { flex-direction: column; align-items: stretch; }
+  #passengerModal .modal-body .form-row .form-group label { width: auto; margin-bottom: 6px; }
+  #passengerModal .modal-body .form-row .form-group label::after { display: none; }
+}
