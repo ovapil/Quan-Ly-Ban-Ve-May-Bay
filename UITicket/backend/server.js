@@ -1729,6 +1729,54 @@ app.post('/api/admin/airports', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
+
+// PATCH: Update airport info
+app.patch('/api/admin/airports/:code', verifyToken, requireAdmin, async (req, res) => {
+  const oldCode = String(req.params.code).trim().toUpperCase();
+  let { code, name, city, country } = req.body || {};
+  code = code !== undefined ? String(code).trim().toUpperCase() : oldCode;
+  name = name !== undefined ? String(name).trim() : undefined;
+  city = city !== undefined ? String(city).trim() : undefined;
+  country = country !== undefined ? String(country).trim() : undefined;
+  try {
+    // Check if airport exists
+    const existing = await pool.query('SELECT ma_san_bay FROM san_bay WHERE ma_san_bay = $1', [oldCode]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Sân bay không tồn tại' });
+    }
+
+    // Nếu đổi mã, kiểm tra mã mới đã tồn tại chưa
+    if (code !== oldCode) {
+      const checkNew = await pool.query('SELECT ma_san_bay FROM san_bay WHERE ma_san_bay = $1', [code]);
+      if (checkNew.rows.length > 0) {
+        return res.status(400).json({ error: 'Mã sân bay mới đã tồn tại' });
+      }
+    }
+
+    // Thực hiện update
+    let result;
+    if (code !== oldCode) {
+      // Đổi mã: update mã, tên, thành phố, quốc gia
+      result = await pool.query(
+        `UPDATE san_bay SET ma_san_bay = $1, ten_san_bay = COALESCE($2, ten_san_bay), thanh_pho = COALESCE($3, thanh_pho), quoc_gia = COALESCE($4, quoc_gia)
+         WHERE ma_san_bay = $5 RETURNING ma_san_bay, ten_san_bay, thanh_pho, quoc_gia`,
+        [code, name, city, country, oldCode]
+      );
+    } else {
+      // Không đổi mã: update tên, thành phố, quốc gia
+      result = await pool.query(
+        `UPDATE san_bay SET ten_san_bay = COALESCE($1, ten_san_bay), thanh_pho = COALESCE($2, thanh_pho), quoc_gia = COALESCE($3, quoc_gia)
+         WHERE ma_san_bay = $4 RETURNING ma_san_bay, ten_san_bay, thanh_pho, quoc_gia`,
+        [name, city, country, code]
+      );
+    }
+    res.json({ message: 'Cập nhật sân bay thành công', airport: result.rows[0] });
+  } catch (error) {
+    console.error('PATCH /api/admin/airports/:code error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
 app.delete('/api/admin/airports/:code', verifyToken, requireAdmin, async (req, res) => {
   const code = String(req.params.code).trim().toUpperCase();
 
@@ -1802,6 +1850,53 @@ app.post('/api/admin/classes', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
+
+// PATCH: Update class info
+app.patch('/api/admin/classes/:code', verifyToken, requireAdmin, async (req, res) => {
+  const oldCode = String(req.params.code).trim().toUpperCase();
+  let { code, name, ratio } = req.body || {};
+  code = code !== undefined ? String(code).trim().toUpperCase() : oldCode;
+  name = name !== undefined ? String(name).trim() : undefined;
+  ratio = ratio !== undefined ? parseFloat(ratio) : undefined;
+  try {
+    // Check if class exists
+    const existing = await pool.query('SELECT ma_hang_ve FROM hang_ve WHERE ma_hang_ve = $1', [oldCode]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Hạng vé không tồn tại' });
+    }
+
+    // Nếu đổi mã, kiểm tra mã mới đã tồn tại chưa
+    if (code !== oldCode) {
+      const checkNew = await pool.query('SELECT ma_hang_ve FROM hang_ve WHERE ma_hang_ve = $1', [code]);
+      if (checkNew.rows.length > 0) {
+        return res.status(400).json({ error: 'Mã hạng vé mới đã tồn tại' });
+      }
+    }
+
+    // Thực hiện update
+    let result;
+    if (code !== oldCode) {
+      // Đổi mã: update mã, tên, tỷ lệ
+      result = await pool.query(
+        `UPDATE hang_ve SET ma_hang_ve = $1, ten_hang_ve = COALESCE($2, ten_hang_ve), ti_le_gia = COALESCE($3, ti_le_gia)
+         WHERE ma_hang_ve = $4 RETURNING ma_hang_ve, ten_hang_ve, ti_le_gia`,
+        [code, name, ratio, oldCode]
+      );
+    } else {
+      // Không đổi mã: update tên, tỷ lệ
+      result = await pool.query(
+        `UPDATE hang_ve SET ten_hang_ve = COALESCE($1, ten_hang_ve), ti_le_gia = COALESCE($2, ti_le_gia)
+         WHERE ma_hang_ve = $3 RETURNING ma_hang_ve, ten_hang_ve, ti_le_gia`,
+        [name, ratio, code]
+      );
+    }
+    res.json({ message: 'Cập nhật hạng vé thành công', class: result.rows[0] });
+  } catch (error) {
+    console.error('PATCH /api/admin/classes/:code error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
 app.delete('/api/admin/classes/:code', verifyToken, requireAdmin, async (req, res) => {
   const code = String(req.params.code).trim().toUpperCase();
 
@@ -1871,6 +1966,47 @@ app.post('/api/admin/parameters', verifyToken, requireAdmin, async (req, res) =>
     });
   } catch (error) {
     console.error('POST /api/admin/parameters error:', error);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+
+// PATCH: Update parameter value by name
+app.patch('/api/admin/parameters/:name', verifyToken, requireAdmin, async (req, res) => {
+  const name = String(req.params.name).trim();
+  let { value, desc } = req.body || {};
+
+  try {
+    value = String(value || '').trim();
+    desc = desc !== undefined ? String(desc).trim() : undefined;
+
+    if (!value) {
+      return res.status(400).json({ error: 'Giá trị là bắt buộc' });
+    }
+
+    // Check if parameter exists
+    const existing = await pool.query(
+      'SELECT ten_tham_so FROM tham_so WHERE ten_tham_so = $1',
+      [name]
+    );
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Tham số không tồn tại' });
+    }
+
+    // Update parameter
+    const result = await pool.query(
+      `UPDATE tham_so SET gia_tri = $1, mo_ta = COALESCE($2, mo_ta)
+       WHERE ten_tham_so = $3
+       RETURNING ten_tham_so, gia_tri, mo_ta`,
+      [value, desc, name]
+    );
+
+    res.json({
+      message: 'Cập nhật tham số thành công',
+      parameter: result.rows[0]
+    });
+  } catch (error) {
+    console.error('PATCH /api/admin/parameters/:name error:', error);
     res.status(500).json({ error: 'Lỗi server' });
   }
 });

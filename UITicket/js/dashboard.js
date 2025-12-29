@@ -1125,11 +1125,90 @@ Object.assign(Dashboard, {
               <div class="info-item-subtext">${escapeHtml(a.thanh_pho || '')} - ${escapeHtml(a.quoc_gia || '')}</div>
             </div>
           </div>
+          <button class="info-edit-btn" onclick="Dashboard.editAirport('${escapeHtml(a.ma_san_bay)}', '${escapeHtml(a.ten_san_bay)}', '${escapeHtml(a.thanh_pho || '')}', '${escapeHtml(a.quoc_gia || '')}')">
+            <i class='fa-solid fa-pen'></i>
+          </button>
           <button class="info-del-btn" onclick="Dashboard.deleteAirport('${escapeHtml(a.ma_san_bay)}')">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
       `).join('');
+    // TÁCH RA NGOÀI OBJECT ĐỂ KHÔNG LÀM HỎNG DASHBOARD
+    Dashboard.editAirport = async function(code, name, city, country) {
+      // Hiển thị prompt nhập thông tin mới cho tất cả trường
+      const newCode = await UI.prompt({
+        title: `Sửa mã sân bay: ${code}`,
+        message: 'Nhập mã sân bay mới:',
+        defaultValue: code,
+        placeholder: 'Mã sân bay',
+        confirmText: 'Tiếp tục',
+        cancelText: 'Hủy',
+        type: 'info',
+        icon: 'fa-pen'
+      });
+      if (newCode === null || newCode.trim() === '') return;
+
+      const newName = await UI.prompt({
+        title: `Sửa tên sân bay: ${newCode}`,
+        message: 'Nhập tên sân bay mới:',
+        defaultValue: name,
+        placeholder: 'Tên sân bay',
+        confirmText: 'Tiếp tục',
+        cancelText: 'Hủy',
+        type: 'info',
+        icon: 'fa-pen'
+      });
+      if (newName === null || newName.trim() === '') return;
+
+      const newCity = await UI.prompt({
+        title: `Sửa thành phố sân bay: ${newCode}`,
+        message: 'Nhập thành phố mới:',
+        defaultValue: city,
+        placeholder: 'Thành phố',
+        confirmText: 'Tiếp tục',
+        cancelText: 'Hủy',
+        type: 'info',
+        icon: 'fa-pen'
+      });
+      if (newCity === null) return;
+
+      const newCountry = await UI.prompt({
+        title: `Sửa quốc gia sân bay: ${newCode}`,
+        message: 'Nhập quốc gia mới:',
+        defaultValue: country,
+        placeholder: 'Quốc gia',
+        confirmText: 'Cập nhật',
+        cancelText: 'Hủy',
+        type: 'info',
+        icon: 'fa-pen'
+      });
+      if (newCountry === null) return;
+
+      const token = localStorage.getItem("uiticket_token");
+      try {
+        UI.showLoading();
+        const res = await fetch(`${API_BASE_URL}/admin/airports/${encodeURIComponent(code)}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code: newCode, name: newName, city: newCity, country: newCountry })
+        });
+        const data = await res.json();
+        UI.hideLoading();
+        if (!res.ok) {
+          UI.toast(data.error || 'Lỗi cập nhật sân bay', 'warn');
+          return;
+        }
+        UI.toast('Cập nhật sân bay thành công', 'success');
+        Dashboard.loadAirports();
+      } catch (error) {
+        UI.hideLoading();
+        console.error('Edit airport error:', error);
+        UI.toast('Lỗi cập nhật sân bay', 'warn');
+      }
+    };
     } catch (error) {
       console.error('Load airports error:', error);
       UI.toast('Lỗi tải sân bay', 'warn');
@@ -1236,11 +1315,83 @@ Object.assign(Dashboard, {
               <div class="info-item-subtext">Tỷ lệ: ${c.ti_le_gia}x</div>
             </div>
           </div>
+          <button class="info-edit-btn" onclick="Dashboard.editClass('${escapeHtml(c.ma_hang_ve)}', '${escapeHtml(c.ten_hang_ve)}', '${c.ti_le_gia}')">
+            <i class='fa-solid fa-pen'></i>
+          </button>
           <button class="info-del-btn" onclick="Dashboard.deleteClass('${escapeHtml(c.ma_hang_ve)}')">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
       `).join('');
+    // TÁCH RA NGOÀI OBJECT ĐỂ KHÔNG LÀM HỎNG DASHBOARD
+    Dashboard.editClass = async function(code, name, ratio) {
+      // Hiển thị prompt nhập thông tin mới cho tất cả trường
+      const newCode = await UI.prompt({
+        title: `Sửa mã hạng vé: ${code}`,
+        message: 'Nhập mã hạng vé mới:',
+        defaultValue: code,
+        placeholder: 'Mã hạng vé',
+        confirmText: 'Tiếp tục',
+        cancelText: 'Hủy',
+        type: 'info',
+        icon: 'fa-pen'
+      });
+      if (newCode === null || newCode.trim() === '') return;
+
+      const newName = await UI.prompt({
+        title: `Sửa tên hạng vé: ${newCode}`,
+        message: 'Nhập tên hạng vé mới:',
+        defaultValue: name,
+        placeholder: 'Tên hạng vé',
+        confirmText: 'Tiếp tục',
+        cancelText: 'Hủy',
+        type: 'info',
+        icon: 'fa-pen'
+      });
+      if (newName === null || newName.trim() === '') return;
+
+      const newRatioStr = await UI.prompt({
+        title: `Sửa tỷ lệ giá: ${newCode}`,
+        message: 'Nhập tỷ lệ giá mới (số thực, ví dụ 1.2):',
+        defaultValue: ratio,
+        placeholder: 'Tỷ lệ giá',
+        confirmText: 'Cập nhật',
+        cancelText: 'Hủy',
+        type: 'info',
+        icon: 'fa-pen'
+      });
+      if (newRatioStr === null) return;
+      const newRatio = parseFloat(newRatioStr);
+      if (isNaN(newRatio)) {
+        UI.toast('Tỷ lệ giá không hợp lệ', 'warn');
+        return;
+      }
+
+      const token = localStorage.getItem("uiticket_token");
+      try {
+        UI.showLoading();
+        const res = await fetch(`${API_BASE_URL}/admin/classes/${encodeURIComponent(code)}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code: newCode, name: newName, ratio: newRatio })
+        });
+        const data = await res.json();
+        UI.hideLoading();
+        if (!res.ok) {
+          UI.toast(data.error || 'Lỗi cập nhật hạng vé', 'warn');
+          return;
+        }
+        UI.toast('Cập nhật hạng vé thành công', 'success');
+        Dashboard.loadClasses();
+      } catch (error) {
+        UI.hideLoading();
+        console.error('Edit class error:', error);
+        UI.toast('Lỗi cập nhật hạng vé', 'warn');
+      }
+    };
     } catch (error) {
       console.error('Load classes error:', error);
       UI.toast('Lỗi tải hạng vé', 'warn');
@@ -1345,6 +1496,9 @@ Object.assign(Dashboard, {
               <div class="info-item-subtext">${escapeHtml(p.mo_ta || '(không có mô tả)')}</div>
             </div>
           </div>
+          <button class="info-edit-btn" onclick="Dashboard.editParameter(\'${escapeHtml(p.ten_tham_so)}\', \`${p.gia_tri ? String(p.gia_tri).replace(/`/g, '\u0060').replace(/\\/g, '\\') : ''}\`, \`${p.mo_ta ? String(p.mo_ta).replace(/`/g, '\u0060').replace(/\\/g, '\\') : ''}\`)">
+            <i class='fa-solid fa-pen'></i>
+          </button>
           <button class="info-del-btn" onclick="Dashboard.deleteParameter('${escapeHtml(p.ten_tham_so)}')">
             <i class="fa-solid fa-trash"></i>
           </button>
@@ -1354,6 +1508,70 @@ Object.assign(Dashboard, {
       console.error('Load parameters error:', error);
       UI.toast('Lỗi tải tham số', 'warn');
     }
+  // TÁCH RA NGOÀI OBJECT ĐỂ KHÔNG LÀM HỎNG DASHBOARD
+  Dashboard.editParameter = async function(name, value, desc) {
+    // Hiển thị prompt nhập thông tin mới cho tất cả trường
+    const newName = await UI.prompt({
+      title: `Sửa tên tham số: ${name}`,
+      message: 'Nhập tên tham số mới:',
+      defaultValue: name,
+      placeholder: 'Tên tham số',
+      confirmText: 'Tiếp tục',
+      cancelText: 'Hủy',
+      type: 'info',
+      icon: 'fa-pen'
+    });
+    if (newName === null || newName.trim() === '') return;
+
+    const newValue = await UI.prompt({
+      title: `Sửa giá trị tham số: ${newName}`,
+      message: 'Nhập giá trị mới:',
+      defaultValue: value,
+      placeholder: 'Giá trị mới',
+      confirmText: 'Tiếp tục',
+      cancelText: 'Hủy',
+      type: 'info',
+      icon: 'fa-pen'
+    });
+    if (newValue === null) return;
+
+    const newDesc = await UI.prompt({
+      title: `Sửa mô tả tham số: ${newName}`,
+      message: 'Nhập mô tả mới:',
+      defaultValue: desc,
+      placeholder: 'Mô tả',
+      confirmText: 'Cập nhật',
+      cancelText: 'Hủy',
+      type: 'info',
+      icon: 'fa-pen'
+    });
+    if (newDesc === null) return;
+
+    const token = localStorage.getItem("uiticket_token");
+    try {
+      UI.showLoading();
+      const res = await fetch(`${API_BASE_URL}/admin/parameters/${encodeURIComponent(name)}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newName, value: newValue, desc: newDesc })
+      });
+      const data = await res.json();
+      UI.hideLoading();
+      if (!res.ok) {
+        UI.toast(data.error || 'Lỗi cập nhật tham số', 'warn');
+        return;
+      }
+      UI.toast('Cập nhật tham số thành công', 'success');
+      Dashboard.loadParameters();
+    } catch (error) {
+      UI.hideLoading();
+      console.error('Edit parameter error:', error);
+      UI.toast('Lỗi cập nhật tham số', 'warn');
+    }
+  };
   },
 
   async addParameter() {
