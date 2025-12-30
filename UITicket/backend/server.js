@@ -1900,22 +1900,76 @@ app.patch('/api/admin/classes/:code', verifyToken, requireAdmin, async (req, res
 app.delete('/api/admin/classes/:code', verifyToken, requireAdmin, async (req, res) => {
   const code = String(req.params.code).trim().toUpperCase();
 
+  // (khuyến nghị) Không cho xóa 2 hạng mặc định theo đề (BUS/ECO)
+  if (code === "BUS" || code === "ECO") {
+    return res.status(400).json({
+      error: "Không thể xóa hạng vé mặc định (BUS/ECO). Bạn chỉ có thể cập nhật tên hoặc tỉ lệ giá."
+    });
+  }
+
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
-      'DELETE FROM hang_ve WHERE ma_hang_ve = $1 RETURNING ma_hang_ve',
+    await client.query("BEGIN");
+
+    // ✅ Check hạng vé có đang được dùng không (tránh FK crash)
+    const usedFlight = await client.query(
+      "SELECT COUNT(*)::int AS c FROM chuyen_bay_hang_ve WHERE ma_hang_ve = $1",
+      [code]
+    );
+    const usedTicket = await client.query(
+      "SELECT COUNT(*)::int AS c FROM ve WHERE ma_hang_ve = $1",
+      [code]
+    );
+    const usedBooking = await client.query(
+      "SELECT COUNT(*)::int AS c FROM giao_dich_ve WHERE ma_hang_ve = $1",
+      [code]
+    );
+
+    const c1 = usedFlight.rows[0]?.c || 0;
+    const c2 = usedTicket.rows[0]?.c || 0;
+    const c3 = usedBooking.rows[0]?.c || 0;
+
+    if (c1 > 0 || c2 > 0 || c3 > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error:
+          "Không thể xóa hạng vé vì đã được sử dụng trong dữ liệu (chuyến bay/vé/đặt chỗ). " +
+          "Hãy cập nhật tên/tỉ lệ giá hoặc xóa các dữ liệu liên quan trước."
+      });
+    }
+
+    // ✅ Nếu không bị dùng thì xóa được
+    const result = await client.query(
+      "DELETE FROM hang_ve WHERE ma_hang_ve = $1 RETURNING ma_hang_ve",
       [code]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Hạng vé không tồn tại' });
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Hạng vé không tồn tại" });
     }
 
-    res.json({ message: 'Đã xóa hạng vé' });
+    await client.query("COMMIT");
+    res.json({ message: "Đã xóa hạng vé" });
   } catch (error) {
-    console.error('DELETE /api/admin/classes/:code error:', error);
-    res.status(500).json({ error: 'Lỗi server' });
+    await client.query("ROLLBACK");
+
+    // FK violation (đề phòng vẫn bị)
+    if (error?.code === "23503") {
+      return res.status(409).json({
+        error:
+          "Không thể xóa hạng vé vì đang được tham chiếu bởi dữ liệu khác. " +
+          "Hãy cập nhật thay vì xóa, hoặc xóa các bản ghi liên quan trước."
+      });
+    }
+
+    console.error("DELETE /api/admin/classes/:code error:", error);
+    res.status(500).json({ error: "Lỗi server", details: error.message });
+  } finally {
+    client.release();
   }
 });
+
 
 // ============================================
 // ADMIN: PARAMETER MANAGEMENT (THAM SỐ)
