@@ -1534,13 +1534,7 @@ Object.assign(Dashboard, {
         return;
       }
 
-      list.innerHTML = data.parameters.map(p => {
-        const locked = isLockedParameterName(p.ten_tham_so);
-        const deleteBtn = locked
-          ? '<button class="info-del-btn" disabled style="opacity:0.5;cursor:not-allowed;pointer-events:none;" title="Không thể xóa tham số cố định"><i class="fa-solid fa-trash"></i></button>'
-          : `<button class="info-del-btn" onclick="Dashboard.deleteParameter('${escapeHtml(p.ten_tham_so)}')"><i class="fa-solid fa-trash"></i></button>`;
-
-        return `
+      list.innerHTML = data.parameters.map(p => `
         <div class="info-item">
           <div class="info-item-main">
             <div class="info-item-code">${escapeHtml(p.ten_tham_so)}</div>
@@ -1549,13 +1543,11 @@ Object.assign(Dashboard, {
               <div class="info-item-subtext">${escapeHtml(p.mo_ta || '(không có mô tả)')}</div>
             </div>
           </div>
-          <button class="info-edit-btn" onclick="Dashboard.editParameter(\'${escapeHtml(p.ten_tham_so)}\', \`${p.gia_tri ? String(p.gia_tri).replace(/`/g, '\u0060').replace(/\\/g, '\\') : ''}\`, \`${p.mo_ta ? String(p.mo_ta).replace(/`/g, '\u0060').replace(/\\/g, '\\') : ''}\`)">
+          <button class="info-edit-btn" onclick="Dashboard.editParameter('${escapeHtml(p.ten_tham_so)}', \`${p.gia_tri ? String(p.gia_tri).replace(/`/g, '\u0060').replace(/\\/g, '\\') : ''}\`, \`${p.mo_ta ? String(p.mo_ta).replace(/`/g, '\u0060').replace(/\\/g, '\\') : ''}\`)">
             <i class='fa-solid fa-pen'></i>
           </button>
-          ${deleteBtn}
         </div>
-        `;
-      }).join('');
+      `).join('');
     } catch (error) {
       console.error('Load parameters error:', error);
       UI.toast('Lỗi tải tham số', 'warn');

@@ -214,32 +214,63 @@ const SellPage = {
 
 mapFlight(row) {
   // backend may return JSON column as JS array or as a JSON string
-  let classes = [];
+  let rawClasses = [];
   try {
-    if (Array.isArray(row.hang_ve)) classes = row.hang_ve;
-    else if (typeof row.hang_ve === 'string' && row.hang_ve) classes = JSON.parse(row.hang_ve);
+    if (Array.isArray(row.hang_ve)) rawClasses = row.hang_ve;
+    else if (typeof row.hang_ve === "string" && row.hang_ve) rawClasses = JSON.parse(row.hang_ve);
   } catch (e) {
-    console.warn('Failed to parse hang_ve for', row.ma_chuyen_bay, e);
-    classes = [];
+    console.warn("Failed to parse hang_ve for", row.ma_chuyen_bay, e);
+    rawClasses = [];
   }
-  // sắp theo ti_le_gia giảm dần (hạng cao trước)
-  classes.sort((a,b) => (Number(b.ti_le_gia)||0) - (Number(a.ti_le_gia)||0));
 
-  const c1 = classes[0];
-  const c2 = classes[1];
-  // fallback: if per-class data empty, use aggregated `ghe_con_lai`
-  const totalConLai = Number(row.ghe_con_lai ?? 0);
-  const seats1 = classes.length === 0 ? totalConLai : (c1 ? Number(c1.con_lai || 0) : 0);
-  const seats2 = classes.length === 0 ? 0 : (c2 ? Number(c2.con_lai || 0) : 0);
+  // ✅ Normalize DB class -> UI class ("1"=Hạng 1, "2"=Hạng 2)
+  const dbToUiClass = (code) => {
+    const c = String(code || "").trim().toUpperCase();
+    if (c === "BUS") return "1";
+    if (c === "ECO") return "2";
+    if (c === "1" || c === "2") return c; // fallback nếu DB lỡ dùng 1/2
+    return ""; // ignore unknown
+  };
 
-  // DEBUG: xem dữ liệu trả về
-  console.log(`🔍 mapFlight(${row.ma_chuyen_bay}):`, {
-    rawRow: row,
-    classes: classes,
-    c1, c2,
-    totalConLai,
-    seats1, seats2
-  });
+  // ✅ Bucket theo Hạng 1/Hạng 2 thay vì lấy classes[0]/classes[1]
+  const bucket1 = { ma_hang_ve: "BUS", ten_hang_ve: "Hạng 1", ti_le_gia: 1.05, so_luong_ghe: 0, da_ban: 0, da_dat: 0, con_lai: 0 };
+  const bucket2 = { ma_hang_ve: "ECO", ten_hang_ve: "Hạng 2", ti_le_gia: 1.0,  so_luong_ghe: 0, da_ban: 0, da_dat: 0, con_lai: 0 };
+
+  let has1 = false;
+  let has2 = false;
+
+  for (const c of (rawClasses || [])) {
+    const ui = dbToUiClass(c?.ma_hang_ve);
+    if (!ui) continue;
+
+    const target = ui === "1" ? bucket1 : bucket2;
+    if (ui === "1") has1 = true;
+    if (ui === "2") has2 = true;
+
+    target.so_luong_ghe += Number(c?.so_luong_ghe || 0);
+    target.da_ban += Number(c?.da_ban || 0);
+    target.da_dat += Number(c?.da_dat || 0);
+    target.con_lai += Number(c?.con_lai || 0);
+
+    // lấy tên + tỷ lệ giá “đúng” nếu backend có join hang_ve
+    if (c?.ten_hang_ve) target.ten_hang_ve = c.ten_hang_ve;
+    if (Number(c?.ti_le_gia) > 0) target.ti_le_gia = Math.max(Number(target.ti_le_gia || 0), Number(c.ti_le_gia));
+  }
+
+  const classes = [];
+  if (has1) classes.push(bucket1);
+  if (has2) classes.push(bucket2);
+
+  // sắp theo ti_le_gia giảm dần
+  classes.sort((a, b) => (Number(b.ti_le_gia) || 0) - (Number(a.ti_le_gia) || 0));
+
+  // ✅ Tổng ghế trống backend đã SUM sẵn (an toàn nhất)
+  const availTotal = Number(row.ghe_con_lai ?? 0);
+
+  const seats1 = has1 ? Math.max(0, Number(bucket1.con_lai || 0)) : 0;
+  const seats2 = has2 ? Math.max(0, Number(bucket2.con_lai || 0)) : 0;
+
+  console.log(`🔍 mapFlight(${row.ma_chuyen_bay})`, { rawClasses, seats1, seats2, availTotal, classes });
 
   return {
     code: row.ma_chuyen_bay,
@@ -249,7 +280,6 @@ mapFlight(row) {
     toName: row.san_bay_den,
     fromCity: this.airports?.find((a) => String(a.ma_san_bay) === String(row.ma_san_bay_di))?.thanh_pho || "",
     toCity: this.airports?.find((a) => String(a.ma_san_bay) === String(row.ma_san_bay_den))?.thanh_pho || "",
-    // backward-compatible aliases used by renderFlights
     from: row.san_bay_di,
     to: row.san_bay_den,
     departISO: row.ngay_gio_bay,
@@ -258,13 +288,19 @@ mapFlight(row) {
     booked: Number(row.ghe_da_dat ?? 0),
     sold: Number(row.ghe_da_ban ?? 0),
 
-    // UI bạn đang có 2 dòng Hạng 1/Hạng 2 => map 2 hạng đầu
+    // ✅ hiển thị đúng Hạng 1/Hạng 2
     seats1,
     seats2,
 
-    classes, // giữ lại để tính giá/hiện select
+    // ✅ tổng ghế trống để list không bị thiếu
+    availTotal,
+
+    // ✅ select hạng vé chỉ còn đúng 2 option (nếu có)
+    classes,
   };
 },
+
+
 
 minutesToText(min) {
   const h = Math.floor(min / 60);
@@ -279,8 +315,10 @@ minutesToText(min) {
   el: {},
 
   totalSeats(f) {
-    return (f.seats1 || 0) + (f.seats2 || 0);
+  // ✅ Ưu tiên tổng ghế trống backend đã tính (ghe_con_lai)
+  return Number(f.availTotal ?? ((f.seats1 || 0) + (f.seats2 || 0)));
   },
+
 
   fmtMoney(n) {
     return new Intl.NumberFormat("vi-VN").format(Number(n || 0)) + " VNĐ";
