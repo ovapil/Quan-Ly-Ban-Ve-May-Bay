@@ -1386,7 +1386,7 @@ Object.assign(Dashboard, {
     const token = localStorage.getItem("uiticket_token");
     
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/airports/${code}`, {
+      const res = await fetch(`${API_BASE_URL}/admin/airports/${encodeURIComponent(code)}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

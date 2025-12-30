@@ -1779,21 +1779,72 @@ app.patch('/api/admin/airports/:code', verifyToken, requireAdmin, async (req, re
 
 app.delete('/api/admin/airports/:code', verifyToken, requireAdmin, async (req, res) => {
   const code = String(req.params.code).trim().toUpperCase();
+  const client = await pool.connect();
 
   try {
-    const result = await pool.query(
-      'DELETE FROM san_bay WHERE ma_san_bay = $1 RETURNING ma_san_bay',
+    await client.query("BEGIN");
+
+    // ✅ Check sân bay có đang được dùng không:
+    // 1) làm sân bay đi/đến của chuyến bay
+    // 1) Sân bay đang được dùng làm sân bay đi/đến trong chuyến bay
+const usedInFlights = await client.query(
+  `SELECT COUNT(*)::int AS c
+   FROM chuyen_bay
+   WHERE san_bay_di::text = $1::text
+      OR san_bay_den::text = $1::text`,
+  [code]
+);
+
+
+    // 2) làm sân bay trung gian
+    const usedInStopovers = await client.query(
+      `SELECT COUNT(*)::int AS c
+       FROM chi_tiet_san_bay_trung_gian
+       WHERE ma_san_bay = $1`,
+      [code]
+    );
+
+    const c1 = usedInFlights.rows[0]?.c || 0;
+    const c2 = usedInStopovers.rows[0]?.c || 0;
+
+    if (c1 > 0 || c2 > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        error:
+          "Không thể xóa sân bay vì đã được sử dụng trong dữ liệu (chuyến bay / sân bay trung gian). " +
+          "Hãy xóa/cập nhật các chuyến bay liên quan trước hoặc ngưng sử dụng sân bay này."
+      });
+    }
+
+    // ✅ Nếu không bị dùng thì xóa bình thường
+    const result = await client.query(
+      "DELETE FROM san_bay WHERE ma_san_bay = $1 RETURNING ma_san_bay",
       [code]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Sân bay không tồn tại' });
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Sân bay không tồn tại" });
     }
 
-    res.json({ message: 'Đã xóa sân bay' });
+    await client.query("COMMIT");
+    res.json({ message: "Đã xóa sân bay" });
   } catch (error) {
-    console.error('DELETE /api/admin/airports/:code error:', error);
-    res.status(500).json({ error: 'Lỗi server' });
+    await client.query("ROLLBACK");
+
+    // FK violation (phòng trường hợp còn bảng khác tham chiếu)
+    if (error?.code === "23503") {
+      return res.status(409).json({
+        error:
+          "Không thể xóa sân bay vì đang được tham chiếu bởi dữ liệu khác. " +
+          "Hãy xóa/cập nhật các bản ghi liên quan trước."
+      });
+    }
+
+    console.error("DELETE /api/admin/airports/:code error:", error);
+    res.status(500).json({ error: "Lỗi server", details: error.message });
+  } finally {
+    client.release();
   }
 });
 
