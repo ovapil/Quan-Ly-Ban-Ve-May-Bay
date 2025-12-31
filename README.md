@@ -174,6 +174,27 @@ Nếu chưa có, hãy tự chèn dữ liệu ban đầu vào bảng `users` (m�
   - Trỏ domain/tên miền, reverse proxy (Nginx) đến port backend.
   - Build một static hosting cho thư mục frontend hoặc serve static qua Express (nếu muốn gom một server).
 
+## Hướng dẫn kết nối PostgreSQL NeonDB bằng VS Code
+
+1. Mở **Extensions** (CTRL + SHIFT + X) → Tìm **Database Client** → Install.
+2. Bấm vào biểu tượng Database như hình bên trái.
+3. Server Type → Chọn **POSTGRESQL**.
+4. Tick vào **User Connection String** → Dán vào:
+
+```
+postgresql://neondb_owner:npg_glAuGK79PJbN@ep-wild-bonus-a1zgno9i-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+```
+
+5. Đặt tên connection tuỳ ý, nhấn **Save & Connect**.
+6. Sau khi kết nối, chọn connection tên **VeMayBay** → chọn database **neondb** → bung các mục để xem tables.
+
+---
+
+### Lưu ý
+- Đảm bảo đã cài extension Database Client.
+- Connection string trên dùng cho NeonDB PostgreSQL, có SSL bắt buộc.
+- Nếu gặp lỗi, kiểm tra lại user/password hoặc quyền truy cập NeonDB.
+
 ---
 
 README này mô tả tổng quan kiến trúc, tính năng và cách chạy project UITicket. Bạn có thể chỉnh sửa/viết thêm phần mô tả nghiệp vụ chi tiết hoặc hướng dẫn cài đặt database cho phù hợp với tài liệu môn học/đồ án của mình.
