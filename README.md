@@ -1,200 +1,150 @@
-# UITicket - Hệ thống quản lý bán vé máy bay
+# ✈️ UITicket – Hệ thống Quản lý Bán vé Máy bay
 
-UITicket là một ứng dụng web hỗ trợ quản lý bán vé máy bay cho phòng vé/đại lý, bao gồm các chức năng từ nhận lịch chuyến bay, đặt vé, bán vé, quản lý hành khách đến lập báo cáo doanh thu. Dự án được xây dựng với giao diện web tĩnh (HTML/CSS/JS) và backend Node.js/Express kết nối PostgreSQL.
+> **Đồ án thuộc khuôn khổ môn học Nhập môn Công nghệ Phần mềm (SE104.Q13) - Trường Đại học Công nghệ Thông tin (UIT).**
 
-## 1. Tính năng chính
+**UITicket** là ứng dụng web toàn diện hỗ trợ phòng vé và đại lý hàng không quản lý quy trình nghiệp vụ: từ nhận lịch bay, đặt chỗ, bán vé, quản lý hành khách cho đến báo cáo doanh thu.
 
-- **Xác thực & phân quyền**
-  - Đăng nhập bằng tài khoản Staff/Admin, lưu phiên bằng JWT.
-  - Kiểm tra phiên tự động, khóa tài khoản, đăng xuất, kiểm tra token.
-  - Yêu cầu reset mật khẩu, quản trị viên phê duyệt và gửi mật khẩu tạm qua email.
-- **Quản lý người dùng (Admin)**
-  - Tạo tài khoản Staff/Admin, đặt lại mật khẩu, khóa/mở khóa tài khoản.
-  - Ghi log đăng nhập, quản lý phiên (sessions) của người dùng.
-- **Quản lý sân bay & tham số hệ thống**
-  - Danh sách sân bay: mã sân bay, tên sân bay, thành phố, quốc gia.
-  - Tham số hệ thống: số sân bay trung gian tối đa, thời gian dừng tối thiểu/tối đa, thời gian đặt vé chậm nhất, thời gian bay tối thiểu,…
-- **Nhận lịch chuyến bay (schedule.html / schedule.js)**
-  - Tự sinh mã chuyến bay kế tiếp từ backend.
-  - Chọn sân bay đi/đến, nhập ngày giờ khởi hành, thời gian bay.
-  - Khai báo hạng vé, số lượng ghế cho từng hạng.
-  - Khai báo các sân bay trung gian (thời gian dừng, ghi chú) và kiểm tra theo tham số hệ thống.
-  - Gửi dữ liệu lên backend để tạo chuyến bay mới.
-- **Đặt vé (booking.html / booking.js)**
-  - Lọc chuyến bay theo sân bay đi/đến, ngày bay, mã chuyến.
-  - Kiểm tra số ghế trống theo từng hạng, chọn chuyến bay.
-  - Nhập thông tin hành khách (họ tên, CMND/CCCD, số điện thoại) với kiểm tra định dạng.
-  - Tạo phiếu đặt chỗ dựa trên hạn đặt vé, quy định số ngày tối thiểu trước giờ bay.
-- **Bán vé (sell.html / sell.js)**
-  - Tìm chuyến bay còn chỗ theo nhiều tiêu chí.
-  - Bán vé theo từng hạng (Hạng 1/Hạng 2) với quy định về đơn giá (ví dụ: Hạng 1 = 105% đơn giá).
-  - Kiểm tra số ghế trống theo hạng, số ghế đã bán/đã đặt.
-  - Kiểm tra thông tin hành khách (CMND/CCCD, số điện thoại), chỉ hiện lỗi khi bấm "Bán vé".
-  - Danh sách vé đã bán, gồm: mã vé, mã chuyến bay, hành khách, CMND, SĐT, hạng vé, giá vé, thời điểm bán.
-- **Tra cứu chuyến bay / vé (lookup.html / lookup.js)**
-  - Tra cứu thông tin chuyến bay, vé/phiếu đặt theo nhiều tiêu chí (mã chuyến, hành khách, số CMND/CCCD,…).
-- **Quản lý hành khách (passenger.html / passenger.js)**
-  - Gom thông tin hành khách từ giao dịch vé và bảng vé.
-  - Thống kê theo hành khách: số vé, trạng thái (paid/booked/cancelled/expired), tổng tiền đã chi.
-  - Lọc, tìm kiếm, sắp xếp, phân trang danh sách hành khách.
-  - Xem lịch sử giao dịch chi tiết của từng hành khách.
-- **Lập báo cáo doanh thu (report.html / report.js)**
-  - Báo cáo theo **tháng** (nhóm theo chuyến bay) hoặc **năm** (nhóm theo tháng).
-  - Doanh thu chỉ tính từ vé đã bán (bảng VE), không cộng tiền phiếu đặt.
-  - Vẽ biểu đồ đường doanh thu đơn giản bằng canvas (không dùng thư viện ngoài).
-  - Lọc trạng thái (paid/all), tìm kiếm nhanh, xuất/ìn báo cáo (ở mức giao diện).
-- **Dashboard (dashboard.html / dashboard.js)**
-  - Màn hình tổng quan sau khi đăng nhập: điều hướng nhanh đến các chức năng: nhận lịch, đặt vé, bán vé, tra cứu, hành khách, báo cáo, cài đặt.
-  - Badge thông báo cho Admin về các yêu cầu reset mật khẩu đang chờ.
-- **Cài đặt tài khoản / hệ thống (account.html, settings.html, settings.js)**
-  - Cập nhật thông tin cá nhân, avatar,…
-  - Thay đổi các tham số hệ thống (nếu có quyền phù hợp).
+![UITicket Dashboard](https://github.com/user-attachments/assets/859353a1-c793-42e3-88bf-199d7c61e92d)
 
-## 2. Kiến trúc thư mục
+---
 
-Cấu trúc chính (đã lược bớt chi tiết):
+## 👥 Thành viên thực hiện
 
-- UITicket/
-  - index.html — Trang đăng nhập/forgot password.
-  - dashboard.html — Trang dashboard sau đăng nhập.
-  - booking.html — Quản lý đặt vé.
-  - sell.html — Bán vé.
-  - schedule.html — Nhận lịch chuyến bay.
-  - lookup.html — Tra cứu chuyến bay/vé.
-  - passenger.html — Quản lý hành khách.
-  - report.html — Lập báo cáo doanh thu.
-  - account.html — Thông tin tài khoản người dùng.
-  - settings.html — Cài đặt/tham số hệ thống.
-  - assets/
-    - images/ — Logo, icon, hình minh họa.
-  - css/
-    - common.css — Style chung (layout, button, toast, modal,…).
-    - auth.css — Giao diện đăng nhập/quên mật khẩu.
-    - dashboard.css, booking.css, sell.css, schedule.css, lookup.css, passenger.css, report.css, settings.css — Style cho từng module.
-  - js/
-    - auth.js — Xử lý đăng nhập, quên mật khẩu (gọi API backend, lưu token).
-    - dashboard.js — Kiểm tra phiên, hiển thị dashboard, quản lý thông báo Admin, modal reset mật khẩu, quản lý staff.
-    - booking.js — Đặt vé (chọn chuyến, nhập hành khách, tạo phiếu đặt).
-    - sell.js — Bán vé, kiểm tra ghế, map hạng vé, xử lý bán vé.
-    - schedule.js — Nhận lịch chuyến bay, tham số, sân bay trung gian.
-    - lookup.js — Tra cứu chuyến bay/vé.
-    - passenger.js — Quản lý hành khách, thống kê, lọc/sắp xếp, chi tiết giao dịch.
-    - report.js — Lập báo cáo doanh thu tháng/năm, vẽ biểu đồ.
-    - settings.js — Cài đặt hệ thống, tham số, cấu hình phụ.
-    - storage.js — Các helper lưu trữ localStorage (nếu được sử dụng).
-  - backend/
-    - package.json — Thông tin gói backend, scripts chạy server.
-    - server.js — Toàn bộ API backend (Express, JWT, PostgreSQL, Nodemailer,…).
-    - nodemon.json — Cấu hình nodemon cho chế độ dev.
+| STT | Họ và tên | MSSV | Email |
+|:---:|:---|:---|:---|
+| 1 | **Đoàn Ngọc Minh Châu** | 23520168 | 23520168@gm.uit.edu.vn |
+| 2 | **Lê Nhật Trinh Nguyên** | 235201040 | 235201040@gm.uit.edu.vn |
+| 3 | **Huỳnh Thị Phương Nghi** | 23521001 | 23521001@gm.uit.edu.vn |
 
-## 3. Công nghệ sử dụng
+---
 
-- **Frontend**
-  - HTML5, CSS3 (flex/grid, hiệu ứng glass, toast, modal,…).
-  - JavaScript thuần (không dùng framework), gọi API bằng `fetch`.
-- **Backend**
-  - Node.js + Express (REST API).
-  - PostgreSQL (thông qua `pg.Pool`).
-  - Xác thực JWT (`jsonwebtoken`), mã hóa mật khẩu (`bcrypt`).
-  - Gửi email qua `nodemailer` (SMTP, Gmail hoặc SMTP khác tuỳ cấu hình).
-  - CORS, body parser JSON, quản lý phiên bằng bảng `sessions`.
-- **Thư viện npm (chính)**
-  - `express`, `pg`, `cors`, `dotenv`, `bcrypt`, `jsonwebtoken`, `nodemailer`, `nodemon` (dev).
+## 🗄️ Hướng dẫn kết nối Database (NeonDB)
 
-## 4. Chuẩn bị môi trường
+Để chạy demo nhanh chóng mà không cần cài đặt PostgreSQL local, bạn có thể kết nối trực tiếp đến **NeonDB** thông qua VS Code.
 
-1. **Cài đặt Node.js** (LTS) và PostgreSQL trên máy.
-2. Tạo cơ sở dữ liệu PostgreSQL tương ứng, import schema/data theo script của bạn (bảng `users`, `sessions`, `login_logs`, `reset_requests`, `san_bay`, `chuyen_bay`, `ve`, `giao_dich_ve`, `tham_so`, `hang_ve`,…).
-3. Trong thư mục `backend/`, tạo file `.env` với các biến cơ bản:
+### Các bước thực hiện:
 
-   ```env
-   DATABASE_URL=postgres://user:password@host:port/dbname
-   JWT_SECRET=chuoi-bi-mat-it-nhat-32-ky-tu
+1. **Cài đặt Extension:**  
+   Mở VS Code, nhấn `Ctrl + Shift + X`, tìm và cài đặt extension **Database Client** (tác giả *Weijan Chen*).
 
-   # cấu hình mail (tùy chọn nhưng nên có nếu dùng reset mật khẩu)
-   MAIL_HOST=smtp.gmail.com
-   MAIL_PORT=465
-   MAIL_SECURE=true
-   MAIL_USER=your_email@gmail.com
-   MAIL_PASS=app_password_hoac_smtp_pass
-   MAIL_FROM="UITicket <your_email@gmail.com>"
+2. **Mở Database Manager:**  
+   Click vào biểu tượng Database ở thanh bên trái VS Code.
+
+3. **Tạo kết nối mới:**
+   * **Server Type:** Chọn `PostgreSQL`.
+   * **Connection String:** Tick vào tùy chọn *User Connection String*.
+   * **Nhập chuỗi kết nối:** Copy và dán đoạn mã sau vào ô input:
+   
+   ```text
+   postgresql://neondb_owner:npg_glAuGK79PJbN@ep-wild-bonus-a1zgno9i-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
    ```
 
-   Lưu ý: trong mã có log `DATABASE_URL set`, `JWT_SECRET set` để kiểm tra nhanh.
+4. **Hoàn tất:**  
+   Đặt tên kết nối (ví dụ: `VeMayBay`) và nhấn **Save & Connect**.
 
-## 5. Cài đặt & chạy backend
+5. **Kiểm tra:**  
+   Sau khi kết nối thành công, chọn database `neondb` để xem danh sách các bảng dữ liệu.
 
-Từ thư mục gốc dự án, di chuyển vào `backend/` và cài đặt phụ thuộc:
+> **Lưu ý:** NeonDB yêu cầu kết nối bảo mật (SSL), chuỗi kết nối trên đã bao gồm tham số `sslmode=require`.
+
+---
+
+## 🚀 Tính năng chính
+
+### 🛡️ Quản trị & Bảo mật
+* **Xác thực:** Đăng nhập an toàn với JWT, mã hóa mật khẩu Bcrypt.
+* **Phân quyền:** Hệ thống phân quyền rõ ràng cho **Admin** và **Staff**.
+* **Quản lý người dùng:** Admin có quyền quản lý tài khoản nhân viên.
+* **Cấu hình hệ thống:** Quản lý sân bay, hạng vé và các tham số quy định.
+
+### 🎫 Nghiệp vụ Bán vé
+* **Nhận lịch chuyến bay:** Lên lịch bay, sân bay trung gian, thời gian bay.
+* **Đặt vé & Bán vé:** Quy trình xử lý vé theo thời gian thực.
+* **Tra cứu:** Tìm kiếm chuyến bay và thông tin vé nhanh chóng.
+* **Quản lý hành khách:** Lưu trữ và tra cứu thông tin khách hàng.
+
+### 📊 Báo cáo & Tiện ích
+* **Dashboard:** Tổng quan tình hình kinh doanh.
+* **Báo cáo doanh thu:** Xuất báo cáo chi tiết, trực quan.
+* **Email:** Hỗ trợ gửi mail reset mật khẩu (SMTP).
+
+---
+
+## 🛠️ Công nghệ sử dụng
+
+| Thành phần | Công nghệ / Thư viện |
+| :--- | :--- |
+| **Frontend** | HTML5, CSS3 (Flex/Grid, Glassmorphism), JavaScript thuần (Fetch API). |
+| **Backend** | Node.js, Express.js (REST API). |
+| **Database** | PostgreSQL (`pg.Pool`), NeonDB (Cloud). |
+| **Security** | JWT (`jsonwebtoken`), Bcrypt, CORS. |
+| **Utilities** | Nodemailer (Email), Dotenv (Config). |
+
+---
+
+## ⚙️ Cài đặt & Chạy dự án
+
+### 1. Chuẩn bị môi trường
+* Cài đặt **Node.js** (Bản LTS).
+* Cài đặt **Live Server Extension** trên VS Code.
+
+### 2. Cấu hình Backend
+
+**Bước 1:** Cài đặt thư viện
+
+Mở thư mục `backend` trong VS Code, click chuột phải chọn **"Open in Integrated Terminal"**, sau đó chạy lệnh:
 
 ```bash
-cd backend
 npm install
 ```
 
-Chạy server ở chế độ development (nodemon):
+**Bước 2:** Cấu hình Email (Tùy chọn)
+
+Mở file `.env` trong thư mục `backend/` và chỉnh sửa thông tin email của bạn:
+
+```env
+# Chỉ cần thay đổi 2 dòng sau thành email của bạn
+MAIL_USER=your_email@gmail.com        # Email của bạn
+MAIL_FROM="UITicket <your_email@gmail.com>"  # Email hiển thị khi gửi
+```
+
+> **Lưu ý:** Database đã được cấu hình sẵn trong file `.env`, bạn không cần thay đổi gì thêm.
+
+**Bước 3:** Khởi chạy Server
+
+Tại thư mục `backend`, click chuột phải chọn **"Open in Integrated Terminal"** và chạy:
 
 ```bash
-npm run dev
+node server.js
 ```
 
-Hoặc chạy bình thường:
+Server sẽ chạy tại: `http://localhost:3000`
 
-```bash
-npm start
-```
+### 3. Chạy Frontend
 
-Mặc định server Express sẽ lắng nghe trên port được cấu hình trong `server.js` (thường là `3000`), ví dụ: `http://localhost:3000/api`.
-
-## 6. Chạy frontend
-
-Frontend là các file HTML tĩnh trong thư mục UITicket. Có thể chạy theo các cách:
-
-- Mở trực tiếp `index.html` bằng trình duyệt (double click) **hoặc**
-- Dùng một HTTP server tĩnh (khuyến nghị để tránh lỗi CORS/file protocol), ví dụ:
-  - Sử dụng tiện ích **Live Server** của VS Code.
-  - Hoặc một server tĩnh bất kỳ (serve, http-server, Nginx,…).
-
-Khi backend chạy tại `http://localhost:3000`, các file JS (auth.js, booking.js, sell.js, schedule.js, v.v.) sẽ gọi API dưới prefix `/api` (ví dụ: `/api/auth/login`, `/api/airports`, `/api/chuyen-bay`, `/api/tickets`, `/api/reports/*`,…).
-
-## 7. Tài khoản mẫu & phân quyền
-
-Tùy vào dữ liệu bạn import, cần có ít nhất:
-
-- **Tài khoản Admin**: để tạo Staff, duyệt yêu cầu reset mật khẩu, cấu hình tham số.
-- **Tài khoản Staff**: để thực hiện các nghiệp vụ đặt vé, bán vé, xem báo cáo, quản lý hành khách (theo quyền được backend kiểm soát).
-
-Nếu chưa có, hãy tự chèn dữ liệu ban đầu vào bảng `users` (mật khẩu cần được hash bằng `bcrypt`).
-
-## 8. Ghi chú triển khai / tuỳ chỉnh
-
-- Nên bật SSL cho kết nối PostgreSQL nếu triển khai lên server thực (trong `new Pool({ ssl: { rejectUnauthorized: false } })` đã hỗ trợ cấu hình cơ bản).
-- Cần bảo vệ kỹ `JWT_SECRET` và thông tin SMTP trong `.env`, không commit lên Git.
-- Khi triển khai production, có thể:
-  - Chạy backend dưới process manager (PM2, Docker, systemd,…).
-  - Trỏ domain/tên miền, reverse proxy (Nginx) đến port backend.
-  - Build một static hosting cho thư mục frontend hoặc serve static qua Express (nếu muốn gom một server).
-
-## Hướng dẫn kết nối PostgreSQL NeonDB bằng VS Code
-
-1. Mở **Extensions** (CTRL + SHIFT + X) → Tìm **Database Client** → Install.
-2. Bấm vào biểu tượng Database như hình bên trái.
-3. Server Type → Chọn **POSTGRESQL**.
-4. Tick vào **User Connection String** → Dán vào:
-
-```
-postgresql://neondb_owner:npg_glAuGK79PJbN@ep-wild-bonus-a1zgno9i-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-```
-
-5. Đặt tên connection tuỳ ý, nhấn **Save & Connect**.
-6. Sau khi kết nối, chọn connection tên **VeMayBay** → chọn database **neondb** → bung các mục để xem tables.
+1. Mở file `index.html` (tại thư mục gốc của dự án).
+2. Click chuột phải vào file và chọn **"Open with Live Server"**.
+3. Trình duyệt sẽ tự động mở ứng dụng.
 
 ---
 
-### Lưu ý
-- Đảm bảo đã cài extension Database Client.
-- Connection string trên dùng cho NeonDB PostgreSQL, có SSL bắt buộc.
-- Nếu gặp lỗi, kiểm tra lại user/password hoặc quyền truy cập NeonDB.
+## 👤 Tài khoản Demo
+
+Dữ liệu mẫu đã có sẵn trong Database NeonDB, bạn có thể sử dụng các tài khoản sau (nếu chưa bị thay đổi):
+
+* **Admin:** Quản lý nhân viên, cấu hình tham số.
+* **Staff:** Thực hiện nghiệp vụ bán vé, đặt chỗ.
+
+*(Nếu cần reset dữ liệu, vui lòng liên hệ admin hoặc kiểm tra bảng `users` trong database)*
 
 ---
 
-README này mô tả tổng quan kiến trúc, tính năng và cách chạy project UITicket. Bạn có thể chỉnh sửa/viết thêm phần mô tả nghiệp vụ chi tiết hoặc hướng dẫn cài đặt database cho phù hợp với tài liệu môn học/đồ án của mình.
+## 📝 License
+
+Dự án này được phát triển cho mục đích học tập tại Trường Đại học Công nghệ Thông tin (UIT).
+
+---
+
+## 📧 Liên hệ
+
+Nếu có thắc mắc hoặc góp ý, vui lòng liên hệ qua email của các thành viên nhóm.
