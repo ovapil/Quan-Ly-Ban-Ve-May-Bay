@@ -272,7 +272,7 @@ const ReceiveSchedule = {
     if (!ma_chuyen_bay) return UI.toast("Mã chuyến bay không được tạo. Vui lòng refresh lại trang", "warn");
     if (!san_bay_di) return UI.toast("Vui lòng chọn sân bay đi", "warn");
     if (!san_bay_den) return UI.toast("Vui lòng chọn sân bay đến", "warn");
-    if (san_bay_di === san_bay_den) return UI.toast("Sân bay đi và đến phải khác nhau", "warn");
+    if (san_bay_di === san_bay_den) return UI.toast("Không được chọn trùng sân bay đi và đến", "warn", 2000);
     if (!gia_ve || gia_ve <= 0) return UI.toast("Vui lòng nhập giá vé hợp lệ", "warn");
     if (!flightDate) return UI.toast("Vui lòng chọn ngày bay", "warn");
     if (!departHH || !departMM) return UI.toast("Vui lòng nhập giờ khởi hành", "warn");
@@ -300,7 +300,7 @@ const ReceiveSchedule = {
     
     if (flightDateObj < minFlightDate) {
       const minDateStr = minFlightDate.toLocaleDateString('vi-VN');
-      return UI.toast(`Ngày bay phải từ ${minDateStr} trở lại (chậm nhất ${thoiGianDatVeChamNhat} ngày)`, "warn");
+      return UI.toast(`Từ ngày ${minDateStr} trở đi (chậm nhất ${thoiGianDatVeChamNhat} ngày)`, "warn", 2000);
     }
     
     // ✅ 2. KIỂM TRA THỜI GIAN BAY TỐI THIỂU

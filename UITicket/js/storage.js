@@ -27,7 +27,7 @@ const Storage = {
 };
 
 const UI = {
-  toast(message, type = "success") {
+  toast(message, type = "success", duration = 1600) {
     const toast = document.getElementById("toast");
     if (!toast) return;
 
@@ -35,6 +35,6 @@ const UI = {
     toast.style.background = type === "success" ? "#4caf50" : "#f59e0b";
     toast.style.display = "block";
 
-    setTimeout(() => { toast.style.display = "none"; }, 1600);
+    setTimeout(() => { toast.style.display = "none"; }, duration);
   }
 };
